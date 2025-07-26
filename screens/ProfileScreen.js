@@ -15,7 +15,7 @@ import {
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
-import { Picker } from '@react-native-picker/picker'; // <-- import picker here
+import { Picker } from '@react-native-picker/picker';
 import { API_BASE_URL_JO } from '../config';
 
 export default function ProfileScreen({ token }) {
@@ -32,9 +32,7 @@ export default function ProfileScreen({ token }) {
   const [imageUri, setImageUri] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [focusedInput, setFocusedInput] = useState(null);
 
-  // Sample options for Goal and Activity Level
   const goalOptions = [
     { label: 'Lose Weight', value: 'lose_weight' },
     { label: 'Build Muscle', value: 'build_muscle' },
@@ -137,90 +135,104 @@ export default function ProfileScreen({ token }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6f42c1" />
+        <ActivityIndicator size="large" color="#5a3eb9" />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#f0f4f8' }}
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.title}>My Profile</Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+        <Text style={styles.header}>My Profile</Text>
 
-        <Image source={getProfileImageSource()} style={styles.profileImage} />
-
-        <TouchableOpacity onPress={pickImage} activeOpacity={0.8}>
-          <LinearGradient
-            colors={['#6f42c1', '#a16de6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.gradientButton}
-          >
-            <Text style={styles.buttonText}>Change Photo</Text>
-          </LinearGradient>
+        <TouchableOpacity onPress={pickImage} activeOpacity={0.7} style={styles.imageWrapper}>
+          <Image source={getProfileImageSource()} style={styles.avatar} />
+          <View style={styles.cameraIconWrapper}>
+            <Text style={styles.cameraIcon}>📷</Text>
+          </View>
         </TouchableOpacity>
 
-        {/* Basic inputs */}
-        {['name', 'age', 'bio', 'height', 'weight'].map(key => (
-          <View key={key} style={{ width: '100%' }}>
-            <Text style={styles.label}>
-              {key.charAt(0).toUpperCase() + key.slice(1)}{key === 'bio' ? ' (optional)' : ''}
-            </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Basic Information</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            placeholderTextColor="#999"
+            value={profile.name}
+            onChangeText={val => setProfile(prev => ({ ...prev, name: val }))}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Age"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={profile.age ? String(profile.age) : ''}
+            onChangeText={val => setProfile(prev => ({ ...prev, age: val }))}
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Bio (optional)"
+            placeholderTextColor="#999"
+            multiline
+            value={profile.bio}
+            onChangeText={val => setProfile(prev => ({ ...prev, bio: val }))}
+          />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fitness Details</Text>
+
+          <View style={styles.row}>
             <TextInput
-              style={[
-                styles.input,
-                key === 'bio' && { height: 100 },
-              ]}
-              placeholder={key.charAt(0).toUpperCase() + key.slice(1)}
-              placeholderTextColor="#888"
-              value={profile[key] ? String(profile[key]) : ''}
-              onChangeText={(val) => setProfile(prev => ({ ...prev, [key]: val }))}
-              keyboardType={
-                ['age', 'height', 'weight'].includes(key) ? 'numeric' : 'default'
-              }
-              multiline={key === 'bio'}
-              textAlignVertical={key === 'bio' ? 'top' : 'auto'}
+              style={[styles.input, styles.halfInput]}
+              placeholder="Height (cm)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={profile.height ? String(profile.height) : ''}
+              onChangeText={val => setProfile(prev => ({ ...prev, height: val }))}
+            />
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              placeholder="Weight (kg)"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={profile.weight ? String(profile.weight) : ''}
+              onChangeText={val => setProfile(prev => ({ ...prev, weight: val }))}
             />
           </View>
-        ))}
 
-        {/* Goal picker */}
-        <View style={{ width: '100%', marginBottom: 16 }}>
           <Text style={styles.label}>Goal</Text>
-          <View style={styles.pickerWrapper}>
+          <View style={styles.pickerContainer}>
             <Picker
               selectedValue={profile.goal}
-              onValueChange={(itemValue) =>
-                setProfile(prev => ({ ...prev, goal: itemValue }))
-              }
+              onValueChange={val => setProfile(prev => ({ ...prev, goal: val }))}
               mode="dropdown"
+              dropdownIconColor="#5a3eb9"
+              style={styles.picker}
             >
-              <Picker.Item label="Select Goal..." value="" />
+              <Picker.Item label="Select Goal" value="" />
               {goalOptions.map(opt => (
                 <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
               ))}
             </Picker>
           </View>
-        </View>
 
-        {/* Activity Level picker */}
-        <View style={{ width: '100%', marginBottom: 16 }}>
-          <Text style={styles.label}>Activity Level</Text>
-          <View style={styles.pickerWrapper}>
+          <Text style={[styles.label, { marginTop: 16 }]}>Activity Level</Text>
+          <View style={styles.pickerContainer}>
             <Picker
               selectedValue={profile.activityLevel}
-              onValueChange={(itemValue) =>
-                setProfile(prev => ({ ...prev, activityLevel: itemValue }))
-              }
+              onValueChange={val => setProfile(prev => ({ ...prev, activityLevel: val }))}
               mode="dropdown"
+              dropdownIconColor="#5a3eb9"
+              style={styles.picker}
             >
-              <Picker.Item label="Select Activity Level..." value="" />
+              <Picker.Item label="Select Activity Level" value="" />
               {activityLevelOptions.map(opt => (
                 <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
               ))}
@@ -231,11 +243,11 @@ export default function ProfileScreen({ token }) {
         <TouchableOpacity
           onPress={handleSave}
           activeOpacity={0.8}
-          style={{ borderRadius: 16, overflow: 'hidden', marginTop: 8, width: '100%' }}
           disabled={saving}
+          style={styles.saveButtonWrapper}
         >
           <LinearGradient
-            colors={['#3b82f6', '#2563eb']}
+            colors={['#5a3eb9', '#8257e5']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.saveButton}
@@ -243,7 +255,7 @@ export default function ProfileScreen({ token }) {
             {saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Save Profile</Text>
+              <Text style={styles.saveButtonText}>Save Profile</Text>
             )}
           </LinearGradient>
         </TouchableOpacity>
@@ -253,92 +265,128 @@ export default function ProfileScreen({ token }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 24,
+  root: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+  },
+  scrollContainer: {
+    padding: 24,
     paddingBottom: 40,
     alignItems: 'center',
-    backgroundColor: '#f0f4f8',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#f0f4f8',
+  header: {
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#3c1361',
+    marginBottom: 30,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginVertical: 20,
-    color: '#4b2e83',
+  imageWrapper: {
+    position: 'relative',
+    marginBottom: 30,
   },
-  profileImage: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    marginBottom: 16,
-    backgroundColor: '#eee',
-    shadowColor: '#4b2e83',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
+  avatar: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    borderWidth: 3,
+    borderColor: '#8257e5',
+    backgroundColor: '#ddd',
   },
-  gradientButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 30,
+  cameraIconWrapper: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#5a3eb9',
+    borderRadius: 20,
+    padding: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  cameraIcon: {
+    color: '#fff',
+    fontSize: 18,
+  },
+  section: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
     marginBottom: 24,
-    shadowColor: '#6f42c1',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 6,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-    textAlign: 'center',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4a2373',
+    marginBottom: 16,
   },
   label: {
-    alignSelf: 'flex-start',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b559f',
     marginBottom: 6,
-    fontWeight: '700',
-    color: '#4b2e83',
-    fontSize: 15,
   },
   input: {
     width: '100%',
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderRadius: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#111',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 3,
+    color: '#222',
+    backgroundColor: '#fafafa',
+    marginBottom: 20,
   },
-  pickerWrapper: {
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfInput: {
+    width: '48%',
+  },
+  pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderRadius: 14,
     overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#fafafa',
+    marginTop: 6,
+    height: 50,           // match the picker height
+    justifyContent: 'center',  // vertically center the picker inside container
+  },
+
+  picker: {
+    height: 55,           // increase height (default was 44)
+    color: '#4a2373',
+    paddingVertical: 8,   // add vertical padding for better text spacing
+    textAlignVertical: 'center', // center text vertically on Android
+  },
+
+  saveButtonWrapper: {
+    width: '100%',
+    borderRadius: 30,
+    overflow: 'hidden',
+    shadowColor: '#8257e5',
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    elevation: 10,
   },
   saveButton: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
-    shadowColor: '#2563eb',
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 7,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
