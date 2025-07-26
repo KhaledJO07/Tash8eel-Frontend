@@ -22,18 +22,26 @@ export default function LoginScreen({ navigation, ...others }) {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API_BASE_URL_JO}/users/login`, {
+      const res = await axios.post(`${API_BASE_URL_JO}/users/login`, {
         email,
         password,
       });
 
-      others.setSignedIn(true);
+      const token = res.data.token;
+
+      if (token) {
+        others.setSignedIn(true);
+        others.setToken(token); // ✅ Send token to AppNavigator
+      } else {
+        alert('Login failed: Token not received.');
+      }
     } catch (err) {
       alert(err?.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <KeyboardAvoidingView

@@ -26,19 +26,38 @@ export default function SignUpScreen({ navigation, ...others }) {
 
   const handleSignup = async (values, { setSubmitting }) => {
     try {
-      await axios.post(`${API_BASE_URL_JO}/users/signup`, {
+      const res = await axios.post(`${API_BASE_URL_JO}/users/signup`, {
         email: values.email,
         password: values.password,
       });
 
-      alert('Account created successfully');
-      others.setSignedIn(true);
+      // Signup returns no token, so you need to login immediately after signup to get token
+      if (res.status === 201) {
+        // Signup success, now login
+        const loginRes = await axios.post(`${API_BASE_URL_JO}/users/login`, {
+          email: values.email,
+          password: values.password,
+        });
+        const token = loginRes.data.token;
+
+        if (token) {
+          // Navigate to FitnessProfile BEFORE setting signed in to true
+          navigation.navigate('FitnessProfile', { token });
+          // Do NOT call setSignedIn(true) here, do it after fitness profile completion
+        } else {
+          alert('Signup succeeded but login failed: no token');
+        }
+      } else {
+        alert('Signup failed');
+      }
     } catch (err) {
       alert(err?.response?.data?.message || 'Signup failed');
     } finally {
       setSubmitting(false);
     }
   };
+
+
 
   return (
     <KeyboardAvoidingView
