@@ -24,6 +24,20 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
         goal: '',
         activityLevel: '',
     });
+    const goalOptions = [
+        { label: 'Lose Weight', value: 'lose_weight' },
+        { label: 'Build Muscle', value: 'build_muscle' },
+        { label: 'Maintain Weight', value: 'maintain_weight' },
+        { label: 'Increase Endurance', value: 'increase_endurance' },
+    ];
+
+    const activityLevelOptions = [
+        { label: 'Sedentary', value: 'sedentary' },
+        { label: 'Lightly Active', value: 'lightly_active' },
+        { label: 'Moderately Active', value: 'moderately_active' },
+        { label: 'Very Active', value: 'very_active' },
+        { label: 'Extra Active', value: 'extra_active' },
+    ];
 
 
     const handleSubmit = async () => {
@@ -97,29 +111,36 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
             />
 
             <Text style={styles.label}>Goal</Text>
-            <Picker
-                selectedValue={form.goal}
-                style={styles.input}
-                onValueChange={(val) => setForm({ ...form, goal: val })}
-            >
-                <Picker.Item label="Select goal" value="" />
-                <Picker.Item label="Lose Weight" value="Lose weight" />
-                <Picker.Item label="Gain Muscle" value="Gain muscle" />
-                <Picker.Item label="Maintain Fitness" value="Maintain fitness" />
-            </Picker>
+            <View style={styles.pickerContainer}>
+                <Picker
+                    selectedValue={form.goal}
+                    onValueChange={(val) => setForm({ ...form, goal: val })}
+                    mode="dropdown"
+                    dropdownIconColor="#5a3eb9"
+                    style={styles.picker}
+                >
+                    <Picker.Item label="Select goal" value="" />
+                    {goalOptions.map((option) => (
+                        <Picker.Item key={option.value} label={option.label} value={option.value} />
+                    ))}
+                </Picker>
+            </View>
 
             <Text style={styles.label}>Activity Level</Text>
-            <Picker
-                selectedValue={form.activityLevel}
-                style={styles.input}
-                onValueChange={(val) => setForm({ ...form, activityLevel: val })}
-            >
-                <Picker.Item label="Select level" value="" />
-                <Picker.Item label="Sedentary" value="Sedentary" />
-                <Picker.Item label="Lightly Active" value="Lightly Active" />
-                <Picker.Item label="Moderately Active" value="Moderately Active" />
-                <Picker.Item label="Very Active" value="Very Active" />
-            </Picker>
+            <View style={styles.pickerContainer}>
+                <Picker
+                    selectedValue={form.activityLevel}
+                    onValueChange={(val) => setForm({ ...form, activityLevel: val })}
+                    mode="dropdown"
+                    dropdownIconColor="#5a3eb9"
+                    style={styles.picker}
+                >
+                    <Picker.Item label="Select level" value="" />
+                    {activityLevelOptions.map((option) => (
+                        <Picker.Item key={option.value} label={option.label} value={option.value} />
+                    ))}
+                </Picker>
+            </View>
 
             <TouchableOpacity onPress={handleSubmit} activeOpacity={0.8} style={styles.buttonWrapper}>
                 <LinearGradient
@@ -178,4 +199,22 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 16,
     },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 14,
+        overflow: 'hidden',
+        backgroundColor: '#fafafa',
+        marginTop: 6,
+        height: 50,
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    picker: {
+        height: 55,
+        color: '#4a2373',
+        paddingVertical: 8,
+        textAlignVertical: 'center',
+    },
+
 });

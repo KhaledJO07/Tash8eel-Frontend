@@ -65,7 +65,11 @@ function MainTabs({ token }) {
             <Tab.Screen name="Challenges" component={ChallengeScreen} />
             <Tab.Screen name="Create" component={CreateChallengeScreen} />
             <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
+            <Tab.Screen
+                name="Profile"
+                component={ProfileScreen}
+                initialParams={{ token }} // ✅ pass token here
+            />
             <Tab.Screen name="Timer" component={TimerScreen} />
         </Tab.Navigator>
     );

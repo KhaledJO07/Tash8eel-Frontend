@@ -18,7 +18,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import { API_BASE_URL_JO } from '../config';
 
-export default function ProfileScreen({ token }) {
+export default function ProfileScreen({ route }) {
+  const { token } = route.params;
   const [profile, setProfile] = useState({
     name: '',
     age: '',
@@ -49,6 +50,8 @@ export default function ProfileScreen({ token }) {
   ];
 
   useEffect(() => {
+    console.log('Token being sent:', token); // ✅ Add this
+
     setLoading(true);
     axios
       .get(`${API_BASE_URL_JO}/users/profile`, {
@@ -56,8 +59,13 @@ export default function ProfileScreen({ token }) {
       })
       .then(res => {
         setProfile(res.data);
+        console.log('Loaded profile:', res.data); // ⬅️ Add this
+
       })
-      .catch(() => Alert.alert('Error', 'Failed to load profile'))
+      .catch((err) => {
+        console.error('Profile load error:', err?.response?.data || err.message);
+        Alert.alert('Error', 'Failed to load profile');
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -110,7 +118,7 @@ export default function ProfileScreen({ token }) {
         });
       }
 
-      await axios.put(`${API_BASE_URL_JO}/users/profile`, formData, {
+      const response = await axios.put(`${API_BASE_URL_JO}/users/profile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -118,8 +126,10 @@ export default function ProfileScreen({ token }) {
       });
 
       Alert.alert('Success', 'Profile updated!');
+      setProfile(response.data.user);  // <-- update state with new user data
       setImageUri(null);
     } catch (error) {
+      console.error('Profile update failed:', error.response || error.message || error);
       Alert.alert('Error', 'Failed to update profile');
     } finally {
       setSaving(false);
@@ -128,9 +138,12 @@ export default function ProfileScreen({ token }) {
 
   const getProfileImageSource = () => {
     if (imageUri) return { uri: imageUri };
-    if (profile.avatarUrl) return { uri: `${API_BASE_URL_JO}${profile.avatarUrl}` };
+    if (profile.avatarUrl) return { uri: `${API_BASE_URL_JO}${profile.avatarUrl}?t=${Date.now()}` };
     return require('../assets/images/default-user.png');
   };
+
+
+
 
   if (loading) {
     return (
