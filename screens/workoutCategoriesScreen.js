@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#B0B0B0', // Lighter gray
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 
   // --- Categories List Styles ---
