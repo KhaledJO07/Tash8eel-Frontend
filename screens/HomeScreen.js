@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -17,10 +18,20 @@ const { width, height } = Dimensions.get('window');
 const LinearGradient = ({ colors, style, children, start, end }) => {
   // For now, we'll use the first color as background
   // You can install react-native-linear-gradient for real gradients
+=======
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import LottieView from 'lottie-react-native';
+export default function HomeScreen() {
+>>>>>>> 4c2e1eee7a46c0cc9cea54b2f0f727fa78ffede1
   return (
     <View style={[style, { backgroundColor: colors[0] }]}>
       {children}
     </View>
+
+
+
+
   );
 };
 
