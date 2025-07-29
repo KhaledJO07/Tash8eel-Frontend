@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import WelcomeScreen from '../screens/welcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -78,6 +79,7 @@ function MainTabs({ token }) {
 export default function AppNavigator() {
     const [isSignedIn, setSignedIn] = useState(false);
     const [token, setToken] = useState(null);
+    const [showWelcome, setShowWelcome] = useState(true);
 
     return (
         <NavigationContainer>
@@ -88,6 +90,16 @@ export default function AppNavigator() {
                     </Stack.Screen>
                 ) : (
                     <>
+                        {showWelcome && (
+                            <Stack.Screen name="Welcome">
+                                {props => (
+                                    <WelcomeScreen
+                                        {...props}
+                                        setShowWelcome={setShowWelcome}
+                                    />
+                                )}
+                            </Stack.Screen>
+                        )}
                         <Stack.Screen name="Login">
                             {props => (
                                 <LoginScreen
@@ -116,8 +128,6 @@ export default function AppNavigator() {
                                 />
                             )}
                         </Stack.Screen>
-
-
                     </>
                 )}
             </Stack.Navigator>
