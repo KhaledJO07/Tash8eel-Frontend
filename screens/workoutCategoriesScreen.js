@@ -96,13 +96,13 @@ export default function WorkoutCategoriesScreen() {
   if (status === 'loading') {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" /> {/* Dark status bar */}
+        <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
         <View style={styles.loadingContent}>
           <View style={styles.loadingSpinner}>
-            <ActivityIndicator size="large" color="#5856D6" /> {/* Consistent accent color */}
+            <ActivityIndicator size="large" color="#5856D6" />
           </View>
           <Text style={styles.loadingText}>Loading your workouts...</Text>
-          {/* Removed loading bar for simplicity and consistency with other screens' loading states */}
+
         </View>
       </SafeAreaView>
     );
@@ -113,7 +113,7 @@ export default function WorkoutCategoriesScreen() {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
-        <Text style={styles.errorText}>Error: {error || 'Failed to load workouts.'}</Text> {/* Use errorText style */}
+        <Text style={styles.errorText}>Error: {error || 'Failed to load workouts.'}</Text>
         <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
           <Text style={styles.retryButtonText}>Tap to Retry</Text>
         </TouchableOpacity>
@@ -123,37 +123,36 @@ export default function WorkoutCategoriesScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" /> {/* Dark status bar */}
-
-      {/* Header Section */}
+      <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
+      
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.greeting}>Ready to</Text>
           <View style={styles.headerActions}>
-            <View style={styles.notificationDot} /> {/* Notification dot */}
+            <View style={styles.notificationDot} />
           </View>
         </View>
         <Text style={styles.title}>Train Hard?</Text>
         <Text style={styles.subtitle}>Choose your workout category</Text>
 
-        {/* Stats Cards */}
+        
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{categories.length}</Text>
             <Text style={styles.statLabel}>Categories</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>💪</Text> {/* Emoji for visual appeal */}
+            <Text style={styles.statNumber}>💪</Text>
             <Text style={styles.statLabel}>Ready</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statNumber}>🔥</Text> {/* Emoji for visual appeal */}
+            <Text style={styles.statNumber}>🔥</Text>
             <Text style={styles.statLabel}>Let's Go</Text>
           </View>
         </View>
       </View>
 
-      {/* Categories List */}
+      
       <View style={styles.categoriesSection}>
         <Text style={styles.sectionTitle}>Categories</Text>
         <FlatList
