@@ -1,18 +1,15 @@
-import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { useSelector } from 'react-redux';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import LottieView from 'lottie-react-native';
-import { API_BASE_URL_JO } from '../config';
+import React from 'react'
+import { View, Text, FlatList, TouchableOpacity,StyleSheet } from 'react-native'
+import { useSelector } from 'react-redux'
+import { useNavigation, useRoute } from '@react-navigation/native'
+import LottieView from 'lottie-react-native'
 
 export default function WorkoutListScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const category = route.params?.category;
-
-  const { data: workouts } = useSelector(state => state.workouts);
-
-  const filtered = workouts.filter(w => w.category === category);
+  const route      = useRoute()
+  const navigation = useNavigation()
+  const category   = route.params?.category
+  const workouts   = useSelector(s => s.workouts.data)
+  const filtered   = workouts.filter(w => w.category === category)
 
   return (
     <View style={styles.container}>
@@ -20,15 +17,15 @@ export default function WorkoutListScreen() {
       <FlatList
         data={filtered}
         keyExtractor={item => item._id}
-        contentContainerStyle={styles.listContent} // Changed to use a style object
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('WorkoutDetail', { workout: item })}
-            activeOpacity={0.85} // Added for consistent touch feedback
+            activeOpacity={0.85}
           >
             <LottieView
-              source={{ uri: `${API_BASE_URL_JO}/animations/${item.animationFile}` }}
+              source={{ uri: item.animationUrl }}
               autoPlay
               loop
               style={styles.lottie}
@@ -38,8 +35,11 @@ export default function WorkoutListScreen() {
         )}
       />
     </View>
-  );
+  )
 }
+
+// (keep your existing styles unchanged)
+
 
 const styles = StyleSheet.create({
   container: {
