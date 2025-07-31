@@ -1,23 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     View,
     Text,
     TextInput,
-    Alert, // Ensure Alert is imported
     StyleSheet,
     TouchableOpacity,
     ScrollView,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator, // Added for loading state on button
+    ActivityIndicator,
+    Animated,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 import { API_BASE_URL_JO } from '../config';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserProfile } from '../app/features/userSlice';
 
-export default function FitnessProfileScreen({ navigation, route, setSignedIn, setToken }) {
-    const { token } = route.params;
+// --- Toast Component (Copied from ProfileScreen for consistency) ---
+const Toast = ({ message, isVisible, onHide }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (isVisible) {
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.delay(2000),
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => {
+                onHide();
+            });
+        }
+    }, [isVisible, fadeAnim, onHide]);
+
+    if (!isVisible) return null;
+
+    return (
+        <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.toastText}>{message}</Text>
+        </Animated.View>
+    );
+};
+// --- End Toast Component ---
+
+
+export default function FitnessProfileScreen({ navigation, route }) {
+    // CORRECTED: Get token and dispatch from Redux
+    const dispatch = useDispatch();
+    const token = useSelector(state => state.auth.token);
 
     const [form, setForm] = useState({
         name: '',
@@ -27,10 +66,23 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
         goal: '',
         activityLevel: '',
     });
-    const [saving, setSaving] = useState(false); // State for save button loading
+    const [saving, setSaving] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [showToast, setShowToast] = useState(false);
+
+    // Helper function for showing toast messages
+    const showCustomToast = (message) => {
+        setToastMessage(message);
+        setShowToast(true);
+    };
+
+    const hideCustomToast = () => {
+        setShowToast(false);
+        setToastMessage('');
+    };
 
     const goalOptions = [
-        { label: 'Select Goal', value: '' }, // Added default empty option
+        { label: 'Select Goal', value: '' },
         { label: 'Lose Weight', value: 'lose_weight' },
         { label: 'Build Muscle', value: 'build_muscle' },
         { label: 'Maintain Weight', value: 'maintain_weight' },
@@ -38,7 +90,7 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
     ];
 
     const activityLevelOptions = [
-        { label: 'Select Activity Level', value: '' }, // Added default empty option
+        { label: 'Select Activity Level', value: '' },
         { label: 'Sedentary', value: 'sedentary' },
         { label: 'Lightly Active', value: 'lightly_active' },
         { label: 'Moderately Active', value: 'moderately_active' },
@@ -47,27 +99,25 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
     ];
 
     const handleSubmit = async () => {
-        // Basic validation for required fields
         if (!form.height || !form.weight || !form.goal || !form.activityLevel) {
-            return showCustomToast('Missing Information', 'Please fill out all required fields (Height, Weight, Goal, Activity Level).');
+            return showCustomToast('Please fill out all required fields (Height, Weight, Goal, Activity Level).');
         }
 
-        // Validate numeric fields
         const numericFields = ['age', 'height', 'weight'];
         for (const field of numericFields) {
             if (form[field] && isNaN(Number(form[field]))) {
-                showCustomToast('Validation Error', `${field.charAt(0).toUpperCase() + field.slice(1)} must be a number.`);
+                showCustomToast(`${field.charAt(0).toUpperCase() + field.slice(1)} must be a number.`);
                 return;
             }
         }
 
-        setSaving(true); // Start loading
+        setSaving(true);
         try {
             await axios.put(
                 `${API_BASE_URL_JO}/users/profile`,
                 {
-                    name: form.name || '', // Ensure name is sent even if empty
-                    age: form.age ? Number(form.age) : undefined, // Send as number or undefined if empty
+                    name: form.name || '',
+                    age: form.age ? Number(form.age) : undefined,
                     height: Number(form.height),
                     weight: Number(form.weight),
                     goal: form.goal,
@@ -79,24 +129,32 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
                     },
                 }
             );
-            showCustomToast('Success', 'Fitness profile completed and saved!');
-            setSignedIn(true); // Mark user as signed in
-            setToken(token); // Set the token (though it's already in route.params)
-            // Optionally navigate to Home or another screen after completion
-            // navigation.navigate('MainTabs');
+            showCustomToast('Fitness profile completed and saved!');
+
+            // This dispatch is the key to navigation. It triggers a re-fetch of the
+            // user's profile, which updates the Redux state. The AppNavigator
+            // then detects the updated state and automatically navigates the user
+            // to the main tabs.
+            dispatch(fetchUserProfile(token));
+            navigation.replace('MainTabs');
+
         } catch (err) {
+            // ENHANCED ERROR LOGGING
             console.error('Failed to save fitness profile:', err);
+            if (err.response) {
+                console.error('Server Response Data:', JSON.stringify(err.response.data, null, 2));
+            }
             const errorMessage = err?.response?.data?.message || 'Failed to save profile. Please try again.';
-            showCustomToast('Error', errorMessage);
+            showCustomToast(errorMessage);
         } finally {
-            setSaving(false); // End loading
+            setSaving(false);
         }
     };
 
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.rootContainer} // Changed to rootContainer for overall styling
+            style={styles.rootContainer}
         >
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Text style={styles.header}>Complete Your Fitness Profile</Text>
@@ -116,7 +174,7 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
                                 value={form[key]}
                                 keyboardType={keyboardType || 'default'}
                                 onChangeText={(val) => setForm({ ...form, [key]: val })}
-                                placeholderTextColor="#888" // Lighter placeholder for dark background
+                                placeholderTextColor="#888"
                             />
                         </View>
                     ))}
@@ -126,9 +184,9 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
                         <Picker
                             selectedValue={form.goal}
                             onValueChange={(val) => setForm({ ...form, goal: val })}
-                            dropdownIconColor="#B0B0B0" // Lighter icon color for dark background
+                            dropdownIconColor="#B0B0B0"
                             style={styles.picker}
-                            itemStyle={styles.pickerItem} // Style for iOS picker items
+                            itemStyle={styles.pickerItem}
                         >
                             {goalOptions.map(option => (
                                 <Picker.Item key={option.value} label={option.label} value={option.value} />
@@ -141,9 +199,9 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
                         <Picker
                             selectedValue={form.activityLevel}
                             onValueChange={(val) => setForm({ ...form, activityLevel: val })}
-                            dropdownIconColor="#B0B0B0" // Lighter icon color for dark background
+                            dropdownIconColor="#B0B0B0"
                             style={styles.picker}
-                            itemStyle={styles.pickerItem} // Style for iOS picker items
+                            itemStyle={styles.pickerItem}
                         >
                             {activityLevelOptions.map(option => (
                                 <Picker.Item key={option.value} label={option.label} value={option.value} />
@@ -153,9 +211,9 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
 
                     <TouchableOpacity onPress={handleSubmit} activeOpacity={0.9} disabled={saving}>
                         <LinearGradient
-                            colors={['#5856D6', '#8A56D6']} // Consistent vibrant gradient
+                            colors={['#5856D6', '#8A56D6']}
                             start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }} // Changed end direction for a softer gradient
+                            end={{ x: 1, y: 1 }}
                             style={styles.button}
                         >
                             {saving ? (
@@ -167,83 +225,106 @@ export default function FitnessProfileScreen({ navigation, route, setSignedIn, s
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            <Toast message={toastMessage} isVisible={showToast} onHide={hideCustomToast} />
         </KeyboardAvoidingView>
     );
 }
 
 const styles = StyleSheet.create({
-    rootContainer: { // Renamed from 'container' to avoid conflict with scrollContainer
+    rootContainer: {
         flex: 1,
-        backgroundColor: '#1C1C1E', // Dark background to match the app theme
+        backgroundColor: '#1C1C1E',
     },
     scrollContainer: {
-        flexGrow: 1, // Allows content to grow and scroll
-        justifyContent: 'center', // Center content vertically if it doesn't fill screen
-        padding: 24, // Consistent padding
-        paddingBottom: 40, // Ensure space for keyboard/bottom navigation
+        flexGrow: 1,
+        justifyContent: 'center',
+        padding: 24,
+        paddingBottom: 40,
     },
     header: {
-        fontSize: 30, // Consistent header size
-        fontWeight: '700', // Consistent header weight
-        color: '#FFFFFF', // White text for dark background
-        marginBottom: 30, // Consistent margin
+        fontSize: 30,
+        fontWeight: '700',
+        color: '#FFFFFF',
+        marginBottom: 30,
         textAlign: 'center',
     },
     card: {
-        backgroundColor: '#3A3A3C', // Darker background for the form card
-        borderRadius: 16, // Consistent border radius
-        padding: 20, // Consistent padding
-        shadowColor: '#000', // Add shadows for depth
-        shadowOpacity: 0.3, // Increased shadow opacity for better depth on dark background
+        backgroundColor: '#3A3A3C',
+        borderRadius: 16,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 4 },
         elevation: 8,
     },
     fieldContainer: {
-        marginBottom: 14, // Consistent margin
+        marginBottom: 14,
     },
     label: {
         fontSize: 14,
-        fontWeight: '500', // Consistent label weight
-        color: '#B0B0B0', // Lighter gray for readability on dark background
+        fontWeight: '500',
+        color: '#B0B0B0',
         marginBottom: 6,
     },
     input: {
-        backgroundColor: '#2C2C2E', // Darker input background
-        borderRadius: 12, // Consistent border radius
-        paddingHorizontal: 14, // Consistent padding
+        backgroundColor: '#2C2C2E',
+        borderRadius: 12,
+        paddingHorizontal: 14,
         paddingVertical: 12,
         fontSize: 16,
-        color: '#FFFFFF', // White text color for input
-        height: 50, // Consistent input height
-        borderWidth: 1, // Add border
-        borderColor: '#555', // Darker border for dark theme
+        color: '#FFFFFF',
+        height: 50,
+        borderWidth: 1,
+        borderColor: '#555',
     },
     pickerContainer: {
-        backgroundColor: '#2C2C2E', // Darker picker background
-        borderRadius: 12, // Consistent border radius
-        marginBottom: 14, // Consistent margin
-        overflow: 'hidden', // Ensures borderRadius applies
-        borderWidth: 1, // Add border
-        borderColor: '#555', // Darker border for dark theme
+        backgroundColor: '#2C2C2E',
+        borderRadius: 12,
+        marginBottom: 14,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#555',
     },
     picker: {
         height: 50,
-        color: '#FFFFFF', // White text for picker
-    },
-    pickerItem: { // Style for Picker.Item (iOS only)
         color: '#FFFFFF',
-        backgroundColor: '#2C2C2E', // Background for picker items on iOS
+    },
+    pickerItem: {
+        color: '#FFFFFF',
+        backgroundColor: '#2C2C2E',
     },
     button: {
-        marginTop: 20, // Adjusted margin top for consistency
-        paddingVertical: 16, // Consistent padding
-        borderRadius: 12, // Consistent border radius
+        marginTop: 20,
+        paddingVertical: 16,
+        borderRadius: 12,
         alignItems: 'center',
     },
     buttonText: {
         color: '#fff',
         fontWeight: '600',
         fontSize: 16,
+    },
+    toastContainer: {
+        position: 'absolute',
+        bottom: 50,
+        left: 24,
+        right: 24,
+        backgroundColor: '#333',
+        borderRadius: 10,
+        padding: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    toastText: {
+        color: '#fff',
+        fontSize: 14,
+        textAlign: 'center',
     },
 });

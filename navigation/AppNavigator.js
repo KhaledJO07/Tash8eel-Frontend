@@ -28,9 +28,30 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const WorkoutStack = createNativeStackNavigator();
 
+// A separate stack for the Welcome, Login, and SignUp screens
+function AuthStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+        </Stack.Navigator>
+    );
+}
+
+// A dedicated stack for all authenticated user screens
+function AuthenticatedStack() {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
+        </Stack.Navigator>
+    );
+}
+
 // This component will handle the initial data fetching and navigation
 const MainAppLoadingScreen = ({ navigation }) => {
-    // Call all hooks at the top level of the component
     const dispatch = useDispatch();
     const token = useSelector(state => state.auth.token);
     const userProfileStatus = useSelector(state => state.user.status);
@@ -44,9 +65,10 @@ const MainAppLoadingScreen = ({ navigation }) => {
         }
     }, [dispatch, token, userProfileStatus]);
 
-    // Navigate once data is fetched or on error
+    // Navigate once data is fetched
     useEffect(() => {
         if (userProfileStatus === 'succeeded') {
+            // Check if user has completed the fitness profile
             if (userProfile && userProfile.height && userProfile.weight) {
                 navigation.replace('MainTabs');
             } else {
@@ -55,9 +77,6 @@ const MainAppLoadingScreen = ({ navigation }) => {
         }
         if (userProfileStatus === 'failed') {
             console.error("Failed to fetch user profile:", userProfileError);
-            // We let the Redux state change handle navigation automatically.
-            // When we sign out, isSignedIn becomes false, and the AppNavigator
-            // will re-render to the 'Login' stack.
             dispatch(signOut());
         }
     }, [userProfileStatus, navigation, dispatch, userProfile, userProfileError]);
@@ -82,15 +101,12 @@ function WorkoutStackNavigator() {
 
 function MainTabs() {
     const insets = useSafeAreaInsets();
-    const userProfile = useSelector(state => state.user.profile);
-
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarIcon: ({ color, size }) => {
                     let iconName;
-
                     switch (route.name) {
                         case 'Home':
                             iconName = 'home-outline';
@@ -152,36 +168,11 @@ function MainTabs() {
 
 export default function AppNavigator() {
     const isSignedIn = useSelector(state => state.auth.isSignedIn);
-    const [showWelcome, setShowWelcome] = useState(true);
-
+    
+    // The conditional rendering is now at the top level
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {isSignedIn ? (
-                    <>
-                        <Stack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
-                        <Stack.Screen name="MainTabs" component={MainTabs} />
-                        <Stack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
-                    </>
-                ) : (
-                    <>
-                        {showWelcome ? (
-                            <Stack.Screen name="Welcome">
-                                {props => (
-                                    <WelcomeScreen
-                                        {...props}
-                                        setShowWelcome={setShowWelcome}
-                                    />
-                                )}
-                            </Stack.Screen>
-                        ) : (
-                            // When showWelcome is false, navigate directly to Login
-                            <Stack.Screen name="Login" component={LoginScreen} />
-                        )}
-                        <Stack.Screen name="SignUp" component={SignUpScreen} />
-                    </>
-                )}
-            </Stack.Navigator>
+            {isSignedIn ? <AuthenticatedStack /> : <AuthStack />}
         </NavigationContainer>
     );
 }

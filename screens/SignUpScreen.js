@@ -8,17 +8,19 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Platform,
-  Animated, // Import Animated for toast animation
+  Animated,
 } from 'react-native';
-import { Formik } from 'formik'; // Corrected import: 'Formik' should be destructured from 'formik'
+import { Formik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import LinearGradient from 'react-native-linear-gradient';
 import { API_BASE_URL_JO } from '../config';
+import { useDispatch } from 'react-redux';
+import { signIn } from '../app/features/authSlice'; // <-- Changed import from setToken to signIn
 
 // Simple Toast component
 const Toast = ({ message, isVisible, onHide }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current; // Initial value for opacity: 0
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
@@ -35,12 +37,10 @@ const Toast = ({ message, isVisible, onHide }) => {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        // Only call onHide if the toast is meant to hide after its animation sequence
-        // This prevents immediate re-triggering if isVisible changes while animating
         onHide();
       });
     }
-  }, [isVisible, fadeAnim, onHide]); // Dependencies for useEffect
+  }, [isVisible, fadeAnim, onHide]);
 
   if (!isVisible) return null;
 
@@ -52,16 +52,15 @@ const Toast = ({ message, isVisible, onHide }) => {
 };
 
 export default function SignUpScreen({ navigation }) {
+  const dispatch = useDispatch();
   const [toastMessage, setToastMessage] = useState('');
   const [showToast, setShowToast] = useState(false);
 
-  // Function to show toast message
   const showCustomToast = (message) => {
     setToastMessage(message);
     setShowToast(true);
   };
 
-  // Callback for when toast hides
   const hideCustomToast = () => {
     setShowToast(false);
     setToastMessage('');
@@ -76,33 +75,32 @@ export default function SignUpScreen({ navigation }) {
   });
 
   const handleSignup = async (values, { setSubmitting }) => {
+    const signupUrl = `${API_BASE_URL_JO}/users/signup`;
+
     try {
-      const res = await axios.post(`${API_BASE_URL_JO}/users/signup`, {
+      const res = await axios.post(signupUrl, {
         email: values.email,
         password: values.password,
       });
 
       if (res.status === 201) {
-        const loginRes = await axios.post(`${API_BASE_URL_JO}/users/login`, {
-          email: values.email,
-          password: values.password,
-        });
-        const token = loginRes.data.token;
-
+        // Assume the server returns the token directly from the signup endpoint
+        const { token } = res.data;
         if (token) {
-          showCustomToast('Signup successful! Redirecting to Fitness Profile.');
-          // Delay navigation slightly to allow toast to be seen
-          setTimeout(() => {
-            navigation.navigate('FitnessProfile', { token });
-          }, 2500); // 2.5 seconds (toast duration + a bit)
+          showCustomToast('Signup successful! Loading your profile...');
+
+          // The key fix: use the new 'signIn' action creator
+          dispatch(signIn({ token }));
+
         } else {
-          showCustomToast('Signup Error: Login failed after signup (no token).');
+          showCustomToast('Signup successful, but no token received. Please log in.');
         }
       } else {
         showCustomToast('Signup Failed: An unexpected error occurred.');
       }
     } catch (err) {
       const errorMessage = err?.response?.data?.message || 'Signup failed. Please try again.';
+      console.error('Signup Error:', err);
       showCustomToast(`Signup Error: ${errorMessage}`);
     } finally {
       setSubmitting(false);
@@ -115,7 +113,6 @@ export default function SignUpScreen({ navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Text style={styles.title}>Create Your Account</Text>
-
       <Formik
         initialValues={{ email: '', password: '', confirmPassword: '' }}
         validationSchema={SignupSchema}
@@ -136,7 +133,7 @@ export default function SignUpScreen({ navigation }) {
               placeholder="Email"
               autoCapitalize="none"
               keyboardType="email-address"
-              placeholderTextColor="#888" // Lighter placeholder for dark background
+              placeholderTextColor="#888"
               onChangeText={handleChange('email')}
               onBlur={handleBlur('email')}
               value={values.email}
@@ -144,12 +141,11 @@ export default function SignUpScreen({ navigation }) {
             {touched.email && errors.email && (
               <Text style={styles.error}>{errors.email}</Text>
             )}
-
             <TextInput
               style={styles.input}
               placeholder="Password"
               secureTextEntry
-              placeholderTextColor="#888" // Lighter placeholder for dark background
+              placeholderTextColor="#888"
               onChangeText={handleChange('password')}
               onBlur={handleBlur('password')}
               value={values.password}
@@ -157,12 +153,11 @@ export default function SignUpScreen({ navigation }) {
             {touched.password && errors.password && (
               <Text style={styles.error}>{errors.password}</Text>
             )}
-
             <TextInput
               style={styles.input}
               placeholder="Confirm Password"
               secureTextEntry
-              placeholderTextColor="#888" // Lighter placeholder for dark background
+              placeholderTextColor="#888"
               onChangeText={handleChange('confirmPassword')}
               onBlur={handleBlur('confirmPassword')}
               value={values.confirmPassword}
@@ -170,7 +165,6 @@ export default function SignUpScreen({ navigation }) {
             {touched.confirmPassword && errors.confirmPassword && (
               <Text style={styles.error}>{errors.confirmPassword}</Text>
             )}
-
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={isSubmitting}
@@ -178,7 +172,7 @@ export default function SignUpScreen({ navigation }) {
               activeOpacity={0.9}
             >
               <LinearGradient
-                colors={["#5856D6", "#8A56D6"]} // Consistent vibrant gradient colors
+                colors={["#5856D6", "#8A56D6"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.button}
@@ -193,13 +187,10 @@ export default function SignUpScreen({ navigation }) {
           </View>
         )}
       </Formik>
-
       <Text style={styles.switchText}>
         Already have an account?
         <Text onPress={() => navigation.goBack()} style={styles.linkText}> Login</Text>
       </Text>
-
-      {/* Render the Toast component */}
       <Toast message={toastMessage} isVisible={showToast} onHide={hideCustomToast} />
     </KeyboardAvoidingView>
   );
@@ -210,86 +201,82 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#1C1C1E', // Dark background to match the app theme
+    backgroundColor: '#1C1C1E'
   },
   title: {
     fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 30,
+    fontWeight: '700', marginBottom: 30,
     textAlign: 'center',
-    color: '#FFFFFF', // White text for dark background
+    color: '#FFFFFF'
   },
   formWrapper: {
-    backgroundColor: '#3A3A3C', // Darker background for the form card
-    borderRadius: 16, // Consistent border radius
-    padding: 20, // Consistent padding
-    shadowColor: '#000', // Add shadows for depth
+    backgroundColor: '#3A3A3C',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, // Increased shadow opacity for better depth on dark background
+    shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 8
   },
   input: {
     height: 50,
-    borderColor: '#555', // Darker border for dark theme
+    borderColor: '#555',
     borderWidth: 1,
-    borderRadius: 12, // Consistent border radius
+    borderRadius: 12,
     paddingHorizontal: 14,
-    marginBottom: 14, // Consistent margin
-    backgroundColor: '#2C2C2E', // Darker input background
-    color: '#FFFFFF', // White text color for input
+    marginBottom: 14,
+    backgroundColor: '#2C2C2E',
+    color: '#FFFFFF'
   },
   error: {
-    color: '#FF6B6B', // A slightly softer red for errors on dark background
+    color: '#FF6B6B',
     fontSize: 13,
-    marginBottom: 10,
+    marginBottom: 10
   },
   buttonWrapper: {
     marginTop: 10,
-    borderRadius: 12, // Consistent border radius
-    overflow: 'hidden',
+    borderRadius: 12,
+    overflow: 'hidden'
   },
   button: {
-    paddingVertical: 16, // Consistent padding
+    paddingVertical: 16,
     alignItems: 'center',
-    borderRadius: 12, // Consistent border radius
+    borderRadius: 12
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '600'
   },
   switchText: {
     textAlign: 'center',
     marginTop: 20,
     fontSize: 14,
-    color: '#B0B0B0', // Lighter gray for readability on dark background
+    color: '#B0B0B0'
   },
   linkText: {
-    color: '#5856D6', // A vibrant blue/purple to match button accents
-    fontWeight: '600',
+    color: '#5856D6',
+    fontWeight: '600'
   },
-  // Styles for the Toast component
   toastContainer: {
     position: 'absolute',
-    bottom: 50, // Position above the bottom of the screen
+    bottom: 50,
     left: 24,
     right: 24,
-    backgroundColor: '#333', // Dark background for toast
+    backgroundColor: '#333',
     borderRadius: 10,
     padding: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000, // Ensure it's above other content
-    shadowColor: '#000',
+    zIndex: 1000, shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 5
   },
   toastText: {
-    color: '#fff',
-    fontSize: 14,
-    textAlign: 'center',
+    color: '#fff', fontSize: 14,
+    textAlign: 'center'
   },
 });

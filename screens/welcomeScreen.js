@@ -8,16 +8,11 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient'; // Import LinearGradient
+import LinearGradient from 'react-native-linear-gradient';
 
-const { width, height } = Dimensions.get('window'); // Keeping Dimensions for image sizing as in original code
+const { width, height } = Dimensions.get('window');
 
-const WelcomeScreen = ({ navigation, setShowWelcome }) => {
-  const handleGetStarted = () => {
-    setShowWelcome(false);
-    navigation.navigate('Login');
-  };
-
+const WelcomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -27,7 +22,7 @@ const WelcomeScreen = ({ navigation, setShowWelcome }) => {
           <Text style={styles.subtitle}>Your Fitness Journey Starts Here</Text>
         </View>
 
-        
+        {/* Image Section */}
         <View style={styles.imageSection}>
           <Image
             source={{
@@ -39,25 +34,25 @@ const WelcomeScreen = ({ navigation, setShowWelcome }) => {
           />
         </View>
 
-        
+        {/* Description Section */}
         <View style={styles.descriptionSection}>
           <Text style={styles.description}>
             Transform your body, mind, and lifestyle with personalized workouts and nutrition tracking.
           </Text>
         </View>
 
-        
+        {/* Button Section */}
         <View style={styles.buttonSection}>
           <TouchableOpacity
-            onPress={handleGetStarted}
+            onPress={() => navigation.navigate('Login')} // Direct navigation to the Login screen
             activeOpacity={0.8}
-            style={styles.getStartedButtonWrapper} // Wrapper for LinearGradient
+            style={styles.getStartedButtonWrapper}
           >
             <LinearGradient
-              colors={['#5856D6', '#8A56D6']} // Consistent vibrant gradient
+              colors={['#5856D6', '#8A56D6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.getStartedButton} // Apply button styles here
+              style={styles.getStartedButton}
             >
               <Text style={styles.buttonText}>Get Started</Text>
             </LinearGradient>
@@ -71,12 +66,12 @@ const WelcomeScreen = ({ navigation, setShowWelcome }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1C1C1E', // Dark background to match the app theme
+    backgroundColor: '#1C1C1E',
   },
   content: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingHorizontal: 24, // Consistent padding
+    paddingHorizontal: 24,
     paddingVertical: 40,
   },
   headerSection: {
@@ -86,15 +81,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#5856D6', // Primary accent color for title
+    color: '#5856D6',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#B0B0B0', // Lighter gray for secondary text
+    color: '#B0B0B0',
     textAlign: 'center',
-    // opacity removed as color directly provides desired lightness
   },
   imageSection: {
     flex: 1,
@@ -103,17 +97,16 @@ const styles = StyleSheet.create({
     marginVertical: 40,
   },
   image: {
-    width: width * 0.85, // Slightly larger image
-    height: height * 0.35, // Adjusted height
+    width: width * 0.85,
+    height: height * 0.35,
     borderRadius: 20,
-    // Consistent shadows for the image
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.4, // Increased shadow opacity
-    shadowRadius: 15, // Adjusted shadow radius
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
     elevation: 10,
   },
   descriptionSection: {
@@ -122,20 +115,19 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#B0B0B0', // Lighter gray for description
+    color: '#B0B0B0',
     textAlign: 'center',
     lineHeight: 24,
-    // opacity removed
   },
   buttonSection: {
     alignItems: 'center',
     marginBottom: 20,
   },
-  getStartedButtonWrapper: { // Wrapper for LinearGradient to handle shadow/overflow
+  getStartedButtonWrapper: {
     borderRadius: 30,
-    width: '90%', // Use percentage width for responsiveness
-    overflow: 'hidden', // Ensures gradient respects border radius
-    shadowColor: '#000', // Consistent shadows for the button
+    width: '90%',
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 8,
@@ -144,11 +136,10 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 8,
   },
-  getStartedButton: { // Styles applied directly to LinearGradient
+  getStartedButton: {
     paddingVertical: 16,
     paddingHorizontal: 60,
     alignItems: 'center',
-    // borderRadius handled by wrapper
   },
   buttonText: {
     color: '#FFFFFF',
