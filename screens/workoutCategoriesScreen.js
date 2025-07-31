@@ -63,7 +63,7 @@ export default function WorkoutCategoriesScreen() {
         activeOpacity={0.85}
         onPress={() => navigation.navigate('WorkoutList', { category: item })}
       >
-        <View style={styles.cardInner}> {/* Renamed from cardGradient for clarity, now a consistent dark card */}
+        <View style={styles.cardInner}> 
           <View style={styles.cardHeader}>
             <View style={[styles.categoryIcon, { backgroundColor: categoryColor.bg }]}>
               <Text style={[styles.categoryLetter, { color: categoryColor.text }]}>

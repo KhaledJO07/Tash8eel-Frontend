@@ -286,7 +286,15 @@ export default function ProfileScreen({ route }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Personal Information</Text>
           {/* Removed Name Input */}
-
+          <Text style={styles.label}>Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your Name"
+            placeholderTextColor="#888"
+            value={profile.name}
+            multiline
+            onChangeText={(val) => setProfile({ ...profile, name: val })}
+          />
           <Text style={styles.label}>Age</Text>
           <TextInput
             style={styles.input}

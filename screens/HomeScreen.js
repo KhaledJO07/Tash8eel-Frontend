@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,61 +9,89 @@ import {
   Animated,
   StatusBar,
   SafeAreaView,
-  Platform, // Import Platform for OS-specific adjustments
-  Easing, // <--- IMPORT Easing EXPLICITLY HERE
+  Platform,
+  Easing,
+  ActivityIndicator,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 
-const { width, height } = Dimensions.get('window'); // Keeping Dimensions for responsive sizing
-
-// Simple gradient component for React Native (assuming this is a placeholder for a library)
+// Assuming these custom components are in separate files or defined here
+const { width } = Dimensions.get('window');
 const LinearGradient = ({ colors, style, children, start, end }) => {
-  // In a real app, you'd use 'react-native-linear-gradient' here.
-  // For now, we'll use the first color as a solid background for visual representation.
   return (
     <View style={[style, { backgroundColor: colors[0] }]}>
       {children}
     </View>
   );
 };
-
-// Simple icon component - replace with react-native-vector-icons when installed
 const Icon = ({ name, size = 24, color = '#000' }) => {
   const icons = {
-    'person-circle': '👤', // Unicode emoji for person icon
-    'barbell': '🏋️',     // Unicode emoji for barbell
-    'resize': '📏',      // Unicode emoji for ruler
-    'fitness': '💪',     // Unicode emoji for muscle
-    'trophy': '🏆',      // Unicode emoji for trophy
-    'stopwatch': '⏱️',   // Unicode emoji for stopwatch
-    'restaurant': '🍽️',  // Unicode emoji for restaurant
-    'trending-up': '📈', // Unicode emoji for graph
-    'bulb': '💡',        // Unicode emoji for lightbulb
-    'plus-circle': '➕', // Unicode emoji for plus circle (for 'Create')
+    'person-circle': '👤',
+    'barbell': '🏋️',
+    'resize': '📏',
+    'fitness': '💪',
+    'trophy': '🏆',
+    'stopwatch': '⏱️',
+    'restaurant': '🍽️',
+    'trending-up': '📈',
+    'bulb': '💡',
+    'plus-circle': '➕',
   };
-
   return (
     <Text style={{ fontSize: size, color }}>
-      {icons[name] || '●'} {/* Fallback to a dot if icon not found */}
+      {icons[name] || '●'}
     </Text>
   );
 };
 
-export default HomeScreen = ({ navigation, userProfile }) => {
-  const [fadeAnim] = useState(new Animated.Value(0)); // For opacity animation
-  const [slideAnim] = useState(new Animated.Value(50)); // For translateY animation
+// Reusable Stat Card Component
+const StatCard = ({ title, value, unit, icon, color, onPress }) => (
+  <TouchableOpacity
+    style={[styles.statCard, { borderLeftColor: color }]}
+    onPress={onPress}
+    activeOpacity={0.8}
+  >
+    <View style={styles.statCardContent}>
+      <View style={styles.statHeader}>
+        <Icon name={icon} size={24} color={color} />
+        <Text style={styles.statTitle}>{title}</Text>
+      </View>
+      <View style={styles.statValue}>
+        <Text style={styles.statNumber}>{value}</Text>
+        <Text style={styles.statUnit}>{unit}</Text>
+      </View>
+    </View>
+  </TouchableOpacity>
+);
 
-  // Sample user data - replace with actual API data or Redux state
-  const user = userProfile || {
-    name: 'Alex',
-    weight: 75,
-    height: 180,
-    bmi: 23.1,
-    todaySteps: 8432,
-    weeklyGoal: 10000,
-    streakDays: 12,
-  };
+// Reusable Quick Action Button Component
+const QuickActionButton = ({ title, icon, color, onPress }) => (
+  <TouchableOpacity
+    style={styles.quickActionButtonWrapper}
+    onPress={onPress}
+    activeOpacity={0.8}
+  >
+    <LinearGradient
+      colors={[color, color]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.quickActionButton}
+    >
+      <View style={styles.quickActionContent}>
+        <Icon name={icon} size={28} color="white" />
+        <Text style={styles.quickActionText}>{title}</Text>
+      </View>
+    </LinearGradient>
+  </TouchableOpacity>
+);
 
-  // Motivational quotes for dynamic display
+export default function HomeScreen({ navigation }) {
+  const userProfile = useSelector(state => state.user.profile);
+  const loading = useSelector(state => state.user.status === 'loading');
+
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(50));
+
   const motivationalQuotes = [
     "Your body can do it. It's your mind you need to convince.",
     "The only bad workout is the one that didn't happen.",
@@ -72,115 +100,73 @@ export default HomeScreen = ({ navigation, userProfile }) => {
     "Believe you can and you're halfway there.",
     "Strength does not come from physical capacity. It comes from an indomitable will.",
   ];
-
-  // Randomly select a motivational quote on component mount
   const [currentQuote] = useState(
     motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
   );
 
-  // Entrance animations for header and sections
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 1000, // Fade in over 1 second
+        duration: 1000,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 800, // Slide up over 0.8 seconds
-        easing: Easing.out(Easing.ease), // <--- Use Easing directly here
+        duration: 800,
+        easing: Easing.out(Easing.ease),
         useNativeDriver: true,
       }),
     ]).start();
-  }, []); // Run once on component mount
+  }, [fadeAnim, slideAnim]);
 
-  // Helper function to calculate BMI
+  if (loading || !userProfile) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#5856D6" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  const user = userProfile;
+
   const calculateBMI = (weight, height) => {
     if (!weight || !height || height === 0) return 'N/A';
     return (weight / ((height / 100) ** 2)).toFixed(1);
   };
 
-  // Helper function to determine BMI category and associated color
   const getBMICategory = (bmi) => {
-    const bmiValue = parseFloat(bmi); // Ensure BMI is a number
-    if (isNaN(bmiValue)) return { category: 'N/A', color: '#B0B0B0' }; // Default color for N/A
-
-    if (bmiValue < 18.5) return { category: 'Underweight', color: '#3B82F6' }; // Blue
-    if (bmiValue < 25) return { category: 'Normal', color: '#4ADE80' }; // Green
-    if (bmiValue < 30) return { category: 'Overweight', color: '#FBBF24' }; // Yellow/Orange
-    return { category: 'Obese', color: '#FF6B6B' }; // Red
+    const bmiValue = parseFloat(bmi);
+    if (isNaN(bmiValue)) return { category: 'N/A', color: '#B0B0B0' };
+    if (bmiValue < 18.5) return { category: 'Underweight', color: '#3B82F6' };
+    if (bmiValue < 25) return { category: 'Normal', color: '#4ADE80' };
+    if (bmiValue < 30) return { category: 'Overweight', color: '#FBBF24' };
+    return { category: 'Obese', color: '#FF6B6B' };
   };
 
-  // Helper function to get progress percentage for steps goal
   const getProgressPercentage = () => {
     if (!user.weeklyGoal || user.weeklyGoal === 0) return 0;
     return Math.min((user.todaySteps / user.weeklyGoal) * 100, 100);
   };
 
-  // Reusable Stat Card Component
-  const StatCard = ({ title, value, unit, icon, color, onPress }) => (
-    <TouchableOpacity
-      style={[styles.statCard, { borderLeftColor: color }]} // Dynamic border color
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={styles.statCardContent}>
-        <View style={styles.statHeader}>
-          <Icon name={icon} size={24} color={color} />
-          <Text style={styles.statTitle}>{title}</Text>
-        </View>
-        <View style={styles.statValue}>
-          <Text style={styles.statNumber}>{value}</Text>
-          <Text style={styles.statUnit}>{unit}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  // Reusable Quick Action Button Component
-  const QuickActionButton = ({ title, icon, color, onPress }) => (
-    <TouchableOpacity
-      style={styles.quickActionButtonWrapper} // Wrapper for shadow
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <LinearGradient
-        colors={[color, color]} // Using a solid color for simplicity, could be a gradient
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.quickActionButton}
-      >
-        <View style={styles.quickActionContent}>
-          <Icon name={icon} size={28} color="white" />
-          <Text style={styles.quickActionText}>{title}</Text>
-        </View>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" /> 
-
+      <StatusBar barStyle="light-content" backgroundColor="#1C1C1E" />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        bounces={false} // Prevent excessive bouncing for a cleaner feel
-        contentContainerStyle={styles.scrollViewContent} // Added for bottom padding
+        bounces={false}
+        contentContainerStyle={styles.scrollViewContent}
       >
-        
         <Animated.View
           style={[
             styles.header,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
           <LinearGradient
-            colors={['#3A3A3C', '#2C2C2E']} // Dark gradient for header background
+            colors={['#3A3A3C', '#2C2C2E']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.headerGradient}
@@ -194,74 +180,64 @@ export default HomeScreen = ({ navigation, userProfile }) => {
                 <Icon name="person-circle" size={40} color="white" />
               </TouchableOpacity>
             </View>
-
-            
             <View style={styles.progressSection}>
               <View style={styles.progressRing}>
                 <Text style={styles.progressText}>
-                  {user.todaySteps.toLocaleString()}
+                  {user.todaySteps?.toLocaleString() || 0}
                 </Text>
                 <Text style={styles.progressLabel}>steps today</Text>
               </View>
               <View style={styles.progressInfo}>
                 <Text style={styles.progressGoal}>
-                  Goal: {user.weeklyGoal.toLocaleString()} steps
+                  Goal: {user.weeklyGoal?.toLocaleString() || 0} steps
                 </Text>
                 <Text style={styles.streakText}>
-                  🔥 {user.streakDays} day streak
+                  🔥 {user.streakDays || 0} day streak
                 </Text>
               </View>
             </View>
           </LinearGradient>
         </Animated.View>
 
-        {/* Stats Section */}
         <Animated.View
           style={[
             styles.statsSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
           <Text style={styles.sectionTitle}>Your Stats</Text>
           <View style={styles.statsGrid}>
             <StatCard
               title="Weight"
-              value={user.weight}
+              value={user.weight || 'N/A'}
               unit="kg"
               icon="barbell"
-              color={getBMICategory(user.bmi).color} // Use BMI category color for consistency
+              color={getBMICategory(user.bmi).color}
               onPress={() => navigation?.navigate('Profile')}
             />
             <StatCard
               title="Height"
-              value={user.height}
+              value={user.height || 'N/A'}
               unit="cm"
               icon="resize"
-              color={getBMICategory(user.bmi).color} // Use BMI category color for consistency
+              color={getBMICategory(user.bmi).color}
               onPress={() => navigation?.navigate('Profile')}
             />
             <StatCard
               title="BMI"
               value={calculateBMI(user.weight, user.height)}
-              unit={getBMICategory(user.bmi).category}
+              unit={getBMICategory(calculateBMI(user.weight, user.height)).category}
               icon="fitness"
-              color={getBMICategory(user.bmi).color}
-              onPress={() => navigation?.navigate('FitnessProfile')} 
+              color={getBMICategory(calculateBMI(user.weight, user.height)).color}
+              onPress={() => navigation?.navigate('Profile')}
             />
           </View>
         </Animated.View>
 
-        {/* Quick Actions */}
         <Animated.View
           style={[
             styles.quickActionsSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -269,72 +245,66 @@ export default HomeScreen = ({ navigation, userProfile }) => {
             <QuickActionButton
               title="Challenges"
               icon="trophy"
-              color="#FF6B6B" // Red
+              color="#FF6B6B"
               onPress={() => navigation?.navigate('Challenges')}
             />
             <QuickActionButton
               title="Timer"
               icon="stopwatch"
-              color="#5856D6" // Primary accent color
+              color="#5856D6"
               onPress={() => navigation?.navigate('Timer')}
             />
             <QuickActionButton
-              title="Workouts" // Changed from Nutrition
-              icon="barbell" // Changed icon
-              color="#4ADE80" // Green
-              onPress={() => navigation?.navigate('Workouts')} 
+              title="Workouts"
+              icon="barbell"
+              color="#4ADE80"
+              onPress={() => navigation?.navigate('Workouts')}
             />
             <QuickActionButton
-              title="Create" // Changed from Progress
-              icon="plus-circle" // Changed icon
-              color="#FBBF24" // Yellow
-              onPress={() => navigation?.navigate('Create')} 
+              title="Create"
+              icon="plus-circle"
+              color="#FBBF24"
+              onPress={() => navigation?.navigate('Create')}
             />
           </View>
         </Animated.View>
 
-        {/* Motivation Section */}
         <Animated.View
           style={[
             styles.motivationSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
+            { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
           <View style={styles.motivationCard}>
-            <Icon name="bulb" size={32} color="#5856D6" /> 
+            <Icon name="bulb" size={32} color="#5856D6" />
             <Text style={styles.motivationText}>{currentQuote}</Text>
           </View>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1C1C1E', // Dark background to match the app theme
+    backgroundColor: '#1C1C1E',
   },
   scrollView: {
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 80, // Extra padding at the bottom for tab bar and scroll comfort
+    paddingBottom: 80,
   },
   header: {
-    marginBottom: 20, // Space below the header card
-    // No direct background here, LinearGradient handles it
+    marginBottom: 20,
   },
   headerGradient: {
-    paddingTop: Platform.OS === 'ios' ? 20 : 30, // Adjust padding for status bar/notch
+    paddingTop: Platform.OS === 'ios' ? 20 : 30,
     paddingBottom: 30,
-    paddingHorizontal: 24, // Consistent horizontal padding
+    paddingHorizontal: 24,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
-    // Shadows for the header card
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
@@ -349,12 +319,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 16,
-    color: '#B0B0B0', // Lighter gray for readability
+    color: '#B0B0B0',
     fontWeight: '500',
   },
   userName: {
     fontSize: 24,
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     fontWeight: 'bold',
     marginTop: 4,
   },
@@ -365,26 +335,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 20, // Space from header content
+    marginTop: 20,
   },
   progressRing: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Subtle transparent white
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 8,
-    borderColor: 'rgba(255, 255, 255, 0.2)', // Slightly more opaque border
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   progressText: {
-    fontSize: 20, // Slightly larger
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
   },
   progressLabel: {
     fontSize: 12,
-    color: '#B0B0B0', // Lighter gray
+    color: '#B0B0B0',
     marginTop: 2,
   },
   progressInfo: {
@@ -393,30 +363,30 @@ const styles = StyleSheet.create({
   },
   progressGoal: {
     fontSize: 16,
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     fontWeight: '600',
     marginBottom: 8,
   },
   streakText: {
     fontSize: 16,
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   statsSection: {
-    paddingHorizontal: 24, // Consistent horizontal padding
+    paddingHorizontal: 24,
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     marginBottom: 15,
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    marginHorizontal: -6, // Counteract statCard margin
+    marginHorizontal: -6,
   },
   statCard: {
     backgroundColor: '#3A3A3C',
@@ -443,7 +413,7 @@ const styles = StyleSheet.create({
   },
   statTitle: {
     fontSize: 12,
-    color: '#B0B0B0', // Lighter gray
+    color: '#B0B0B0',
     marginTop: 4,
     textAlign: 'center',
   },
@@ -453,25 +423,25 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
   },
   statUnit: {
     fontSize: 10,
-    color: '#B0B0B0', // Lighter gray
+    color: '#B0B0B0',
     marginTop: 2,
   },
   quickActionsSection: {
-    paddingHorizontal: 24, // Consistent horizontal padding
+    paddingHorizontal: 24,
     marginBottom: 20,
   },
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginHorizontal: -6, // Counteract quickActionButtonWrapper margin
+    marginHorizontal: -6,
   },
-  quickActionButtonWrapper: { // Wrapper for LinearGradient to apply shadow and consistent sizing
-    width: (width - 24 * 2 - 12) / 2, // (screen width - 2*padding - 2*margin between buttons) / 2 buttons
+  quickActionButtonWrapper: {
+    width: (width - 24 * 2 - 12) / 2,
     marginBottom: 12,
     borderRadius: 16,
     overflow: 'hidden',
@@ -483,9 +453,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
-    marginHorizontal: 6, // Space between buttons
+    marginHorizontal: 6,
   },
-  quickActionButton: { // Styles applied directly to LinearGradient
+  quickActionButton: {
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -498,15 +468,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   motivationSection: {
-    paddingHorizontal: 24, // Consistent horizontal padding
+    paddingHorizontal: 24,
     marginBottom: 30,
   },
   motivationCard: {
-    backgroundColor: '#3A3A3C', // Consistent card background
-    borderRadius: 16, // Consistent border radius
+    backgroundColor: '#3A3A3C',
+    borderRadius: 16,
     padding: 20,
     alignItems: 'center',
-    shadowColor: '#000', // Consistent shadows
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -518,9 +488,20 @@ const styles = StyleSheet.create({
   motivationText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#FFFFFF', // White text
+    color: '#FFFFFF',
     textAlign: 'center',
     marginTop: 12,
     lineHeight: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1C1C1E',
+  },
+  loadingText: {
+    color: '#B0B0B0',
+    marginTop: 10,
+    fontSize: 16,
   },
 });

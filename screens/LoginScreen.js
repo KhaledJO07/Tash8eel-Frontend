@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,65 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert, // Import Alert for better user feedback
+  Animated,
 } from 'react-native';
 import axios from 'axios';
-import LinearGradient from 'react-native-linear-gradient'; // Import LinearGradient
+import LinearGradient from 'react-native-linear-gradient';
+import { useDispatch } from 'react-redux';
+import { signIn } from '../app/features/authSlice'; // Import signIn action
 import { API_BASE_URL_JO } from '../config';
 
-export default function LoginScreen({ navigation, ...others }) {
+
+// Simple Toast component (copied from SignUpScreen for consistency)
+const Toast = ({ message, isVisible, onHide }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (isVisible) {
+            Animated.sequence([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+                Animated.delay(2000),
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => {
+                onHide();
+            });
+        }
+    }, [isVisible, fadeAnim, onHide]);
+
+    if (!isVisible) return null;
+
+    return (
+        <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.toastText}>{message}</Text>
+        </Animated.View>
+    );
+};
+
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const dispatch = useDispatch();
+
+  const showCustomToast = (message) => {
+    setToastMessage(message);
+    setShowToast(true);
+  };
+
+  const hideCustomToast = () => {
+    setShowToast(false);
+    setToastMessage('');
+  };
 
   const handleLogin = async () => {
     setLoading(true);
@@ -29,18 +78,15 @@ export default function LoginScreen({ navigation, ...others }) {
 
       const token = res.data.token;
       if (token) {
-        others.setSignedIn(true);
-        others.setToken(token);
-        // IMPORTANT: Do not use alert() in production apps.
-        // Use a custom modal or toast notification for user feedback.
-        showCustomToast('Success', 'Login successful! Welcome back.');
+        // Dispatch the signIn action with the token
+        dispatch(signIn({ token }));
+        showCustomToast('Login successful! Welcome back.');
       } else {
-        showCustomToast('Login Failed', 'Token not received. Please try again.');
+        showCustomToast('Login Failed: Token not received. Please try again.');
       }
     } catch (err) {
-      // Improved error handling to show more specific messages if available
       const errorMessage = err?.response?.data?.message || 'Login failed. Please check your credentials.';
-      showCustomToast('Login Error', errorMessage);
+      showCustomToast(`Login Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -58,7 +104,7 @@ export default function LoginScreen({ navigation, ...others }) {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#888" // Lighter placeholder for dark background
+          placeholderTextColor="#888"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -67,7 +113,7 @@ export default function LoginScreen({ navigation, ...others }) {
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor="#888" // Lighter placeholder for dark background
+          placeholderTextColor="#888"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -76,14 +122,14 @@ export default function LoginScreen({ navigation, ...others }) {
         <TouchableOpacity
           onPress={handleLogin}
           disabled={loading}
-          style={styles.buttonWrapper} 
-          activeOpacity={0.9} // Adjusted opacity
+          style={styles.buttonWrapper}
+          activeOpacity={0.9}
         >
           <LinearGradient
-            colors={["#5856D6", "#8A56D6"]} // Consistent gradient colors from SignUpScreen
+            colors={["#5856D6", "#8A56D6"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.button} // Changed to button for consistent styling
+            style={styles.button}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
@@ -103,59 +149,60 @@ export default function LoginScreen({ navigation, ...others }) {
           Sign up
         </Text>
       </Text>
+      <Toast message={toastMessage} isVisible={showToast} onHide={hideCustomToast} />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+    container: {
     flex: 1,
-    backgroundColor: '#1C1C1E', // Dark background to match the app theme
+    backgroundColor: '#1C1C1E',
     justifyContent: 'center',
     padding: 24,
   },
   title: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#FFFFFF', // White text for dark background
+    color: '#FFFFFF',
     textAlign: 'center',
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,
-    color: '#B0B0B0', // Lighter gray for readability on dark background
+    color: '#B0B0B0',
     textAlign: 'center',
     marginBottom: 30,
   },
-  formWrapper: { // Added formWrapper to match SignUpScreen's card style
-    backgroundColor: '#3A3A3C', // Darker background for the form card
+  formWrapper: {
+    backgroundColor: '#3A3A3C',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, // Increased shadow opacity for better depth on dark background
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
-    marginBottom: 20, // Add some space below the form card
+    marginBottom: 20,
   },
   input: {
-    backgroundColor: '#2C2C2E', // Darker input background
-    color: '#FFFFFF', // White text color for input
+    backgroundColor: '#2C2C2E',
+    color: '#FFFFFF',
     height: 50,
     borderRadius: 12,
     paddingHorizontal: 14,
     fontSize: 16,
-    marginBottom: 14, // Adjusted margin to match SignUpScreen
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#555', // Darker border for dark theme
+    borderColor: '#555',
   },
-  buttonWrapper: { // Renamed from loginButton for consistency
+  buttonWrapper: {
     marginTop: 10,
     borderRadius: 12,
     overflow: 'hidden',
   },
-  button: { // Renamed from loginButton for consistency
-    paddingVertical: 16, // Adjusted padding to match SignUpScreen
+  button: {
+    paddingVertical: 16,
     alignItems: 'center',
     borderRadius: 12,
   },
@@ -166,12 +213,34 @@ const styles = StyleSheet.create({
   },
   switchText: {
     textAlign: 'center',
-    color: '#B0B0B0', // Lighter gray for readability on dark background
+    color: '#B0B0B0',
     marginTop: 20,
     fontSize: 14,
   },
   linkText: {
-    color: '#5856D6', // A vibrant blue/purple to match button accents
+    color: '#5856D6',
     fontWeight: '600',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 24,
+    right: 24,
+    backgroundColor: '#333',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
   },
 });

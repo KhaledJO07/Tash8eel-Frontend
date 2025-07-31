@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Import useSafeAreaInsets
-import WelcomeScreen from '../screens/welcomeScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchUserProfile } from '../app/features/userSlice';
+import { signOut } from '../app/features/authSlice';
+import { ActivityIndicator, View, Text, StyleSheet } from 'react-native';
+
 // Screens
+import WelcomeScreen from '../screens/welcomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -23,6 +28,48 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const WorkoutStack = createNativeStackNavigator();
 
+// This component will handle the initial data fetching and navigation
+const MainAppLoadingScreen = ({ navigation }) => {
+    // Call all hooks at the top level of the component
+    const dispatch = useDispatch();
+    const token = useSelector(state => state.auth.token);
+    const userProfileStatus = useSelector(state => state.user.status);
+    const userProfile = useSelector(state => state.user.profile);
+    const userProfileError = useSelector(state => state.user.error);
+
+    // Initial data fetch
+    useEffect(() => {
+        if (token && userProfileStatus === 'idle') {
+            dispatch(fetchUserProfile(token));
+        }
+    }, [dispatch, token, userProfileStatus]);
+
+    // Navigate once data is fetched or on error
+    useEffect(() => {
+        if (userProfileStatus === 'succeeded') {
+            if (userProfile && userProfile.height && userProfile.weight) {
+                navigation.replace('MainTabs');
+            } else {
+                navigation.replace('FitnessProfile');
+            }
+        }
+        if (userProfileStatus === 'failed') {
+            console.error("Failed to fetch user profile:", userProfileError);
+            // We let the Redux state change handle navigation automatically.
+            // When we sign out, isSignedIn becomes false, and the AppNavigator
+            // will re-render to the 'Login' stack.
+            dispatch(signOut());
+        }
+    }, [userProfileStatus, navigation, dispatch, userProfile, userProfileError]);
+
+    return (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#5856D6" />
+            <Text style={styles.loadingText}>Loading your profile...</Text>
+        </View>
+    );
+};
+
 function WorkoutStackNavigator() {
     return (
         <WorkoutStack.Navigator screenOptions={{ headerShown: false }}>
@@ -33,8 +80,9 @@ function WorkoutStackNavigator() {
     );
 }
 
-function MainTabs({ token }) {
-    const insets = useSafeAreaInsets(); // Get safe area insets
+function MainTabs() {
+    const insets = useSafeAreaInsets();
+    const userProfile = useSelector(state => state.user.profile);
 
     return (
         <Tab.Navigator
@@ -53,47 +101,42 @@ function MainTabs({ token }) {
                         case 'Create':
                             iconName = 'add-circle-outline';
                             break;
+                        case 'Workouts':
+                            iconName = 'barbell-outline';
+                            break;
                         case 'Leaderboard':
                             iconName = 'bar-chart-outline';
-                            break;
-                        case 'Profile':
-                            iconName = 'person-outline';
                             break;
                         case 'Timer':
                             iconName = 'timer-outline';
                             break;
-                        case 'Workouts':
-                            iconName = 'barbell-outline';
+                        case 'Profile':
+                            iconName = 'person-outline';
                             break;
                         default:
                             iconName = 'ellipse-outline';
                     }
-
-                    // Adjust icon size slightly if needed, or keep default 'size'
-                    return <Ionicons name={iconName} size={size + 2} color={color} />; // Increased size slightly for better visibility
+                    return <Ionicons name={iconName} size={size + 2} color={color} />;
                 },
-                // --- Updated Tab Bar Styling ---
-                tabBarActiveTintColor: '#5856D6', // Consistent vibrant accent color
-                tabBarInactiveTintColor: '#A0A0A0', // Lighter gray for inactive icons/labels
+                tabBarActiveTintColor: '#5856D6',
+                tabBarInactiveTintColor: '#A0A0A0',
                 tabBarStyle: {
-                    backgroundColor: '#121212', // Dark background for the tab bar
-                    height: 60 + insets.bottom, // Adjust height to include bottom safe area inset
-                    paddingBottom: 4 + insets.bottom, // Adjust paddingBottom to include bottom safe area inset
-                    paddingTop: 10, // Padding for content above the bottom edge
-                    elevation: 10, // Shadow for Android
-                    // iOS specific shadows for depth
+                    backgroundColor: '#121212',
+                    height: 60 + insets.bottom,
+                    paddingBottom: 4 + insets.bottom,
+                    paddingTop: 10,
+                    elevation: 10,
                     shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -5 }, // Shadow pointing upwards
+                    shadowOffset: { width: 0, height: -5 },
                     shadowOpacity: 0.3,
                     shadowRadius: 10,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
-                    marginBottom: 5, // Small margin below label for spacing
-                    fontWeight: '600', // Make labels slightly bolder
-                    textTransform: 'none', // Prevent uppercase transformation
+                    marginBottom: 5,
+                    fontWeight: '600',
+                    textTransform: 'none',
                 },
-                // --- End Updated Tab Bar Styling ---
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
@@ -102,30 +145,27 @@ function MainTabs({ token }) {
             <Tab.Screen name="Workouts" component={WorkoutStackNavigator} />
             <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Tab.Screen name="Timer" component={TimerScreen} />
-            <Tab.Screen
-                name="Profile"
-                component={ProfileScreen}
-                initialParams={{ token }}
-            />
+            <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
     );
 }
 
 export default function AppNavigator() {
-    const [isSignedIn, setSignedIn] = useState(false);
-    const [token, setToken] = useState(null);
+    const isSignedIn = useSelector(state => state.auth.isSignedIn);
     const [showWelcome, setShowWelcome] = useState(true);
 
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {isSignedIn ? (
-                    <Stack.Screen name="MainTabs">
-                        {props => <MainTabs {...props} token={token} />}
-                    </Stack.Screen>
+                    <>
+                        <Stack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
+                        <Stack.Screen name="MainTabs" component={MainTabs} />
+                        <Stack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
+                    </>
                 ) : (
                     <>
-                        {showWelcome && (
+                        {showWelcome ? (
                             <Stack.Screen name="Welcome">
                                 {props => (
                                     <WelcomeScreen
@@ -134,34 +174,11 @@ export default function AppNavigator() {
                                     />
                                 )}
                             </Stack.Screen>
+                        ) : (
+                            // When showWelcome is false, navigate directly to Login
+                            <Stack.Screen name="Login" component={LoginScreen} />
                         )}
-                        <Stack.Screen name="Login">
-                            {props => (
-                                <LoginScreen
-                                    {...props}
-                                    setSignedIn={setSignedIn}
-                                    setToken={setToken}
-                                />
-                            )}
-                        </Stack.Screen>
-                        <Stack.Screen name="SignUp">
-                            {props => (
-                                <SignUpScreen
-                                    {...props}
-                                    setSignedIn={setSignedIn}
-                                    setToken={setToken}
-                                />
-                            )}
-                        </Stack.Screen>
-                        <Stack.Screen name="FitnessProfile">
-                            {props => (
-                                <FitnessProfileScreen
-                                    {...props}
-                                    setSignedIn={setSignedIn}
-                                    setToken={setToken}
-                                />
-                            )}
-                        </Stack.Screen>
+                        <Stack.Screen name="SignUp" component={SignUpScreen} />
                     </>
                 )}
             </Stack.Navigator>
@@ -169,3 +186,16 @@ export default function AppNavigator() {
     );
 }
 
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#1C1C1E',
+    },
+    loadingText: {
+        color: '#B0B0B0',
+        marginTop: 10,
+        fontSize: 16,
+    },
+});
