@@ -24,6 +24,9 @@ import WorkoutListScreen from '../screens/workoutListScreen';
 import WorkoutDetailScreen from '../screens/workoutDetailScreen';
 import WorkoutCategoriesScreen from '../screens/workoutCategoriesScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
+import WorkoutDtlScreen from '../screens/workoutDtlScreen';
+import  DayDetailScreen from '../screens/DayDetailScreen';
+
 
 
 const Stack = createNativeStackNavigator();
@@ -66,6 +69,16 @@ function ChallengeStackNavigator() {
         component={ChallengeDetailScreen}
         options={{ title: 'Challenge Details' }}
       />
+      <ChallengeStack.Screen
+          name="DayDetail"
+          component={DayDetailScreen}
+          options={({ route }) => ({ title: `Day ${route.params.day}` })}
+        />
+        <ChallengeStack.Screen
+          name="WorkoutDtl"
+          component={WorkoutDtlScreen}
+          options={({ route }) => ({ title: route.params.workout.name })}
+        />
     </ChallengeStack.Navigator>
   );
 }
