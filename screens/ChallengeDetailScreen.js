@@ -313,7 +313,7 @@ export default function ChallengeDetailScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 2, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
   content: { padding: 24 },
   title: { fontSize: 28, fontWeight: '700', color: colors.text, marginBottom: 8 },
