@@ -23,10 +23,13 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import WorkoutListScreen from '../screens/workoutListScreen';
 import WorkoutDetailScreen from '../screens/workoutDetailScreen';
 import WorkoutCategoriesScreen from '../screens/workoutCategoriesScreen';
+import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const WorkoutStack = createNativeStackNavigator();
+const ChallengeStack = createNativeStackNavigator();
 
 // A separate stack for the Welcome, Login, and SignUp screens
 function AuthStack() {
@@ -49,6 +52,24 @@ function AuthenticatedStack() {
         </Stack.Navigator>
     );
 }
+
+function ChallengeStackNavigator() {
+  return (
+    <ChallengeStack.Navigator screenOptions={{ headerShown: false }}>
+      <ChallengeStack.Screen
+        name="ChallengeList"
+        component={ChallengeScreen}
+        options={{ title: 'Challenges' }}
+      />
+      <ChallengeStack.Screen
+        name="ChallengeDetail"
+        component={ChallengeDetailScreen}
+        options={{ title: 'Challenge Details' }}
+      />
+    </ChallengeStack.Navigator>
+  );
+}
+
 
 // This component will handle the initial data fetching and navigation
 const MainAppLoadingScreen = ({ navigation }) => {
@@ -156,7 +177,7 @@ function MainTabs() {
             })}
         >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Challenges" component={ChallengeScreen} />
+            <Tab.Screen name="Challenges" component={ChallengeStackNavigator} />
             <Tab.Screen name="Create" component={CreateChallengeScreen} />
             <Tab.Screen name="Workouts" component={WorkoutStackNavigator} />
             <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
