@@ -1,73 +1,51 @@
-// import React from 'react';
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function HomeScreen() {
-//     return (
-//         <View style={styles.container}>
-//             <Text style={styles.title}>Challenges</Text>
-//         </View>
-//     );
-// }
-
-// const styles = StyleSheet.create({
-//     container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-//     title: { fontSize: 28, fontWeight: 'bold' },
-// });
-
-
-
-
-
-
-
-
-
-
-// // screens/ChallengeScreen.js
-// import React,{useEffect} from 'react';
-// import{FlatList,TouchableOpacity,Text}from'react-native';
-// import{useDispatch,useSelector}from'react-redux';
-// import{fetchChallenges}from'../app/features/challengesSlice';
-
-// export default function ChallengesListScreen({navigation}){
-//   const dispatch=useDispatch();
-//   const list=useSelector(s=>s.challenges.list);
-//   useEffect(()=>{dispatch(fetchChallenges());},[]);
-//   return(
-//     <FlatList
-//       data={list}
-//       keyExtractor={i=>i._id}
-//       contentContainerStyle={{padding:16}}
-//       renderItem={({item})=>(
-//         <TouchableOpacity
-//           onPress={()=>navigation.navigate('ChallengeDetail',{id:item._id})}
-//           style={{padding:16,borderBottomWidth:1,borderColor:'#EEE'}}>
-//           <Text style={{fontSize:18,fontWeight:'bold'}}>{item.title}</Text>
-//           <Text style={{color:'#666'}}>{item.durationDays} days</Text>
-//         </TouchableOpacity>
-//       )}
-//     />
-//   );
-// }
-
-
-
-
 import React, { useEffect } from 'react';
-import { SafeAreaView, FlatList, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import {
+  SafeAreaView,
+  FlatList,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { fetchChallenges } from '../app/features/challengesSlice';
 import { colors } from '../theme/colors';
-import Header from '../components/Header';
+import Header from '../components/Header'; // Assuming this is your custom Header component
 
 export default function ChallengesListScreen({ navigation }) {
   const dispatch = useDispatch();
   const challenges = useSelector(s => s.challenges.list);
+  const status = useSelector(s => s.challenges.status);
+  const error = useSelector(s => s.challenges.error);
 
   useEffect(() => {
-    dispatch(fetchChallenges());
-  }, []);
+    // Only fetch challenges if the status is not 'loading' or 'succeeded'
+    if (status === 'idle') {
+      dispatch(fetchChallenges());
+    }
+  }, [dispatch, status]);
+
+  // Render a loading state while fetching data
+  if (status === 'loading') {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text style={styles.loadingText}>Loading challenges...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Render an error state if fetching fails
+  if (status === 'failed') {
+    return (
+      <SafeAreaView style={[styles.container, styles.center]}>
+        <Text style={styles.errorText}>Failed to load challenges: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => dispatch(fetchChallenges())}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -78,7 +56,7 @@ export default function ChallengesListScreen({ navigation }) {
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.title}</Text>
         <View style={styles.cardMeta}>
-          <Ionicons name="calendar" size={16} color={colors.primary} />
+          <Ionicons name="calendar-outline" size={16} color={colors.primary} />
           <Text style={styles.cardMetaText}>{item.durationDays} days</Text>
         </View>
       </View>
@@ -91,7 +69,7 @@ export default function ChallengesListScreen({ navigation }) {
       <FlatList
         data={challenges}
         renderItem={renderItem}
-        keyExtractor={i => i._id}
+        keyExtractor={item => item._id}
         contentContainerStyle={styles.list}
       />
     </SafeAreaView>
@@ -99,8 +77,17 @@ export default function ChallengesListScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  center: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  list: {
+    padding: 16,
+  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -109,16 +96,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3
+    elevation: 3,
   },
-  cardContent: { flex: 1 },
+  cardContent: {
+    flex: 1,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text
+    color: colors.text,
   },
-  cardMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  cardMetaText: { marginLeft: 6, color: colors.textSecondary }
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  cardMetaText: {
+    marginLeft: 6,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
 });

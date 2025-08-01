@@ -1,76 +1,69 @@
-// // components/DayCard.js
-// import React from 'react';
-// import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-// import LottieView from 'lottie-react-native';
-
-// export default function DayCard({ day, workout, done, onPress }) {
-//   return (
-//     <TouchableOpacity onPress={onPress} style={[
-//       styles.card,
-//       done ? styles.done : styles.pending
-//     ]}>
-//       <LottieView
-//         source={{ uri: workout.animationUrl }}
-//         autoPlay
-//         loop
-//         style={styles.anim}
-//       />
-//       <Text style={styles.day}>Day {day}</Text>
-//       <Text numberOfLines={1} style={styles.title}>{workout.name}</Text>
-//       {done && <Text style={styles.check}>✔️</Text>}
-//     </TouchableOpacity>
-//   );
-// }
-// const styles = StyleSheet.create({
-//   card:    { width:100, padding:8, margin:4, borderRadius:8, borderWidth:1 },
-//   done:    { borderColor:'#4ADE80', backgroundColor:'#ECFDF5' },
-//   pending: { borderColor:'#DDD',   backgroundColor:'#FFF' },
-//   anim:    { width:60, height:60, alignSelf:'center', marginBottom:4 },
-//   day:     { fontSize:10, fontWeight:'bold' },
-//   title:   { fontSize:12 },
-//   check:   { position:'absolute', top:4, right:4 }
-// });
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import LottieView from 'lottie-react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../theme/colors';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-export default function DayCard({ day, done, onPress }) {
+// A reusable component for a single day's card in a challenge.
+const DayCard = ({ day, done, onPress }) => {
   return (
-    <TouchableOpacity style={[styles.card, done && styles.done]} onPress={onPress}>
-      <Text style={styles.day}>Day {day}</Text>
-      {done && <Text style={styles.check}>✔️</Text>}
+    <TouchableOpacity
+      style={[styles.card, done && styles.cardDone]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.content}>
+        <Text style={[styles.dayText, done && styles.dayTextDone]}>Day {day}</Text>
+        {done && (
+          <Ionicons
+            name="checkmark-circle"
+            size={24}
+            color={colors.textOnPrimary}
+            style={styles.checkIcon}
+          />
+        )}
+      </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    width: 72,
-    height: 72,
-    marginHorizontal: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#DDD',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 20, // Increased padding for a cleaner look
+    width: '100%', // Takes up the full width of its container
+    marginBottom: 12, // Space between each card
+    alignItems: 'center', // Centering content horizontally within the card
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  cardDone: {
+    backgroundColor: colors.primary, // A different, vibrant color for completed days
+  },
+  content: {
+    // Flex is not needed here, as the text is now centered directly in the card
+    // The checkmark is positioned absolutely
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  done: {
-    borderColor: '#4ADE80',
-    backgroundColor: '#ECFDF5',
+  dayText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center', // Ensures text is centered within its own space
   },
-  day: {
-    fontSize: 14,
-    fontWeight: '600',
+  dayTextDone: {
+    color: colors.textOnPrimary,
   },
-  check: {
+  checkIcon: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    fontSize: 12,
+    top: 0,
+    right: 0,
   },
 });
+
+export default DayCard;

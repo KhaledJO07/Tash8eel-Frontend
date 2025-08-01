@@ -1,269 +1,34 @@
-// // screens/DayDetailScreen.js
-// import React, { useEffect } from 'react';
-// import {
-//   View, Text, FlatList, TouchableOpacity, StyleSheet
-// } from 'react-native';
-// import { useSelector, useDispatch } from 'react-redux';
-
-// import { fetchChallengeDetail } from '../app/features/challengesSlice';
-
-// export default function DayDetailScreen({ route, navigation }) {
-//   const { challengeId, day } = route.params;
-//   const dispatch = useDispatch();
-//   const { detail } = useSelector(s => s.challenges);
-//   const userId = useSelector(s => s.user.profile?._id);
-
-//   useEffect(() => {
-//     if (!detail || detail._id !== challengeId) {
-//       dispatch(fetchChallengeDetail({ id: challengeId, userId }));
-//     }
-//   }, [challengeId, detail, userId]);
-
-//   if (!detail) return <Text>Loading…</Text>;
-
-//   const workoutsForDay = detail.workouts
-//     .filter(w => w.day === day)
-//     .map(w => w.workoutId);
-
-//   return (
-//     <View style={{ flex: 1, padding: 16 }}>
-//       <Text style={styles.header}>
-//         Workouts for Day {day}
-//       </Text>
-//       <FlatList
-//         data={workoutsForDay}
-//         keyExtractor={item => item._id}
-//         renderItem={({ item }) => (
-//           <TouchableOpacity
-//             style={styles.row}
-//             onPress={() =>
-//               navigation.navigate('WorkoutDtl', {
-//                 challengeId,
-//                 day,
-//                 workout: item
-//               })
-//             }
-//           >
-//             <Text style={styles.title}>{item.name}</Text>
-//           </TouchableOpacity>
-//         )}
-//       />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   header: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-//   row: { padding: 12, borderBottomWidth: 1, borderColor: '#EEE' },
-//   title: { fontSize: 16 }
-// // });
-// import React, { useEffect } from 'react';
-// import {
-//   SafeAreaView,
-//   View,
-//   Text,
-//   FlatList,
-//   ActivityIndicator,
-//   StyleSheet
-// } from 'react-native';
-// import { useSelector, useDispatch } from 'react-redux';
-
-// import { fetchChallengeDetail } from '../app/features/challengesSlice';
-// import WorkoutCard from '../components/WorkoutCard';
-
-// export default function DayDetailScreen({ route, navigation }) {
-//   const { challengeId, day } = route.params;
-//   const dispatch = useDispatch();
-//   const { detail, progress, loading } = useSelector(s => ({
-//     detail: s.challenges.detail,
-//     progress: s.challenges.progress,
-//     loading: s.challenges.status === 'loading'
-//   }));
-//   const userId = useSelector(s => s.user.profile?._id);
-
-//   useEffect(() => {
-//     if (!detail || detail._id !== challengeId) {
-//       dispatch(fetchChallengeDetail({ id: challengeId, userId }));
-//     }
-//   }, [challengeId, detail, userId]);
-
-//   if (loading || !detail) {
-//     return (
-//       <SafeAreaView style={styles.center}>
-//         <ActivityIndicator size="large" color="#4ADE80" />
-//       </SafeAreaView>
-//     );
-//   }
-
-//   const workoutsForDay = detail.workouts
-//     .filter(w => w.day === day)
-//     .map(w => w.workoutId);
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <Text style={styles.header}>Day {day} Workouts</Text>
-//       <FlatList
-//         data={workoutsForDay}
-//         keyExtractor={w => w._id}
-//         numColumns={2}
-//         renderItem={({ item }) => (
-//           <WorkoutCard
-//             workout={item}
-//             onPress={() =>
-//               navigation.navigate('WorkoutDtl', {
-//                 challengeId,
-//                 day,
-//                 workout: item
-//               })
-//             }
-//           />
-//         )}
-//         contentContainerStyle={styles.list}
-//       />
-//     </SafeAreaView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 16 },
-//   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-//   header: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
-//   list: { paddingBottom: 24 }
-// });
-
-
-
-
-
-// // screens/DayDetailScreen.js
-// import React, { useEffect } from 'react';
-// import {
-//   SafeAreaView,
-//   Text,
-//   FlatList,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   StyleSheet
-// } from 'react-native';
-// import { useSelector, useDispatch } from 'react-redux';
-
-// import {
-//   fetchChallengeDetail,
-//   completeDay
-// } from '../app/features/challengesSlice';
-// import WorkoutCard from '../components/WorkoutCard';
-
-// export default function DayDetailScreen({ route, navigation }) {
-//   const { challengeId, day } = route.params;
-//   const dispatch = useDispatch();
-
-//   const { detail, progress, loading } = useSelector(s => ({
-//     detail:   s.challenges.detail,
-//     progress: s.challenges.progress,
-//     loading:  s.challenges.status === 'loading'
-//   }));
-//   const userId = useSelector(s => s.user.profile?._id);
-
-//   useEffect(() => {
-//     if (!detail || detail._id !== challengeId) {
-//       dispatch(fetchChallengeDetail({ id: challengeId, userId }));
-//     }
-//   }, [challengeId, detail, userId]);
-
-//   if (loading || !detail) {
-//     return (
-//       <SafeAreaView style={styles.center}>
-//         <ActivityIndicator size="large" color="#4ADE80" />
-//       </SafeAreaView>
-//     );
-//   }
-
-//   const workoutsForDay = detail.workouts
-//     .filter(w => w.day === day)
-//     .map(w => w.workoutId);
-
-//   const completed = progress?.completedDays.includes(day);
-
-//   const onDayComplete = () => {
-//     if (!completed) {
-//       dispatch(completeDay({ id: challengeId, userId, day }));
-//     }
-//   };
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <Text style={styles.header}>Day {day} Workouts</Text>
-
-//       <FlatList
-//         data={workoutsForDay}
-//         keyExtractor={w => w._id}
-//         numColumns={2}
-//         renderItem={({ item }) => (
-//           <WorkoutCard
-//             workout={item}
-//             onPress={() =>
-//               navigation.navigate('WorkoutDtl', {
-//                 challengeId,
-//                 day,
-//                 workout: item
-//               })
-//             }
-//           />
-//         )}
-//         contentContainerStyle={styles.list}
-//       />
-
-//       <TouchableOpacity
-//         style={[
-//           styles.completeBtn,
-//           completed && styles.completeBtnDone
-//         ]}
-//         onPress={onDayComplete}
-//         disabled={completed}
-//       >
-//         <Text style={styles.completeText}>
-//           {completed ? '✓ Day Complete' : 'Mark Day Complete'}
-//         </Text>
-//       </TouchableOpacity>
-//     </SafeAreaView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container:      { flex: 1, padding: 16 },
-//   center:         { flex: 1, justifyContent: 'center', alignItems: 'center' },
-//   header:         { fontSize: 20, fontWeight: '700', marginBottom: 12 },
-//   list:           { paddingBottom: 24 },
-//   completeBtn:    {
-//     backgroundColor: '#4ADE80',
-//     paddingVertical: 14,
-//     borderRadius: 8,
-//     alignItems: 'center',
-//     marginTop: 12
-//   },
-//   completeBtnDone:{ backgroundColor: '#AAA' },
-//   completeText:   { color: '#FFF', fontWeight: '600' }
-// });
 import React, { useEffect } from 'react';
-import { SafeAreaView, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  SafeAreaView,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  View
+} from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
+import LinearGradient from 'react-native-linear-gradient';
 import { fetchChallengeDetail, completeDay } from '../app/features/challengesSlice';
 import { colors } from '../theme/colors';
-import Header from '../components/Header';
+import Header from '../components/Header'; // Re-import the Header component
 import WorkoutCard from '../components/WorkoutCard';
 
 export default function DayDetailScreen({ route, navigation }) {
   const { challengeId, day } = route.params;
   const dispatch = useDispatch();
+
   const { detail, progress, status } = useSelector(s => s.challenges);
   const loading = status === 'loading';
   const userId = useSelector(s => s.user.profile?._id);
 
+  // Fetch challenge details only if they are not already available
   useEffect(() => {
-    if (!detail || detail._id !== challengeId) {
+    if (userId && (!detail || detail._id !== challengeId)) {
       dispatch(fetchChallengeDetail({ id: challengeId, userId }));
     }
-  }, [challengeId, detail, userId]);
+  }, [challengeId, detail, userId, dispatch]);
 
   if (loading || !detail) {
     return (
@@ -271,16 +36,21 @@ export default function DayDetailScreen({ route, navigation }) {
         <ActivityIndicator size="large" color={colors.accent} />
       </SafeAreaView>
     );
+    //
   }
 
+  // Filter workouts for the specific day
   const workoutsForDay = detail.workouts
     .filter(w => w.day === day)
     .map(w => w.workoutId);
+
+  // Check if the current day has been completed
   const completed = progress?.completedDays.includes(day);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title={`Day ${day}`} />
+      {/* Restored: The original Header component */}
+      <Header title={`Day ${day}`} onBackPress={() => navigation.goBack()} />
       <FlatList
         data={workoutsForDay}
         keyExtractor={w => w._id}
@@ -289,35 +59,85 @@ export default function DayDetailScreen({ route, navigation }) {
           <WorkoutCard
             workout={item}
             onPress={() => navigation.navigate('WorkoutDtl', { workout: item })}
-            theme="dark"
           />
         )}
+        columnWrapperStyle={styles.listRow}
         contentContainerStyle={styles.list}
       />
-      <TouchableOpacity
-        style={[styles.completeButton, completed && styles.completeButtonDone]}
-        onPress={() => !completed && dispatch(completeDay({ id: challengeId, userId, day }))}
-        disabled={completed}
-      >
-        <Text style={styles.completeText}>
-          {completed ? '✓ Day Complete' : 'Mark Day Complete'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          onPress={() => !completed && dispatch(completeDay({ id: challengeId, userId, day }))}
+          disabled={completed}
+          activeOpacity={0.9}
+          style={styles.completeButtonWrapper}
+        >
+          {completed ? (
+            <View style={styles.completeButtonDisabled}>
+              <Text style={styles.completeText}>
+                ✓ Day Complete
+              </Text>
+            </View>
+          ) : (
+            <LinearGradient
+              colors={["#5856D6", "#8A56D6"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.completeButton}
+            >
+              <Text style={styles.completeText}>
+                Mark Day Complete
+              </Text>
+            </LinearGradient>
+          )}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  list: { paddingHorizontal: 16, paddingTop: 16 },
-  completeButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    margin: 16
+  container: {
+    flex: 1,
+    backgroundColor: colors.background
   },
-  completeButtonDone: { backgroundColor: colors.border },
-  completeText: { color: '#FFF', fontWeight: '600', fontSize: 16 }
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background
+  },
+  list: {
+    paddingHorizontal: 16,
+    paddingTop: 16
+  },
+  listRow: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  completeButtonWrapper: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginTop: 10,
+  },
+  completeButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  completeButtonDisabled: {
+    backgroundColor: colors.disabled,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  completeText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16
+  }
 });
