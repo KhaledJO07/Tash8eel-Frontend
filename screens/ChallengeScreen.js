@@ -8,18 +8,25 @@ import Header from '../components/Header';
 
 export default function ChallengesListScreen({ navigation }) {
   const dispatch = useDispatch();
+  // Get all challenges from the Redux store
   const challenges = useSelector(s => s.challenges.list);
 
   useEffect(() => {
     dispatch(fetchChallenges());
   }, []);
 
-  const renderItem = ({ item }) => (
+  // NEW: Sort challenges alphabetically by title and then take the first 5
+  const sortedChallenges = [...challenges].sort((a, b) => {
+    return a.title.localeCompare(b.title);
+  }).slice(0, 5);
+
+  const renderItem = ({ item, index }) => (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
       onPress={() => navigation.navigate('ChallengeDetail', { id: item._id })}
     >
+      
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.title}</Text>
         <View style={styles.cardMeta}>
@@ -34,9 +41,10 @@ export default function ChallengesListScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <Header title="Challenges" />
       <FlatList
-        data={challenges}
+        // Use the new sorted and sliced challenges list
+        data={sortedChallenges}
         renderItem={renderItem}
-        keyExtractor={i => i._id}
+        keyExtractor={item => item._id}
         contentContainerStyle={styles.list}
       />
     </SafeAreaView>
@@ -57,6 +65,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3
+  },
+  numberContainer: {
+    backgroundColor: colors.primary,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  numberText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   cardContent: { flex: 1 },
   cardTitle: {
