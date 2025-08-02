@@ -19,29 +19,23 @@ import { useSelector } from 'react-redux';
 const { width } = Dimensions.get('window');
 const LinearGradient = ({ colors, style, children, start, end }) => {
   return (
-    <View style={[style, { backgroundColor: colors[0] }]}>
-      {children}
-    </View>
+    <View style={[style, { backgroundColor: colors[0] }]}>{children}</View>
   );
 };
 const Icon = ({ name, size = 24, color = '#000' }) => {
   const icons = {
     'person-circle': '👤',
-    'barbell': '🏋️',
-    'resize': '📏',
-    'fitness': '💪',
-    'trophy': '🏆',
-    'stopwatch': '⏱️',
-    'restaurant': '🍽️',
+    barbell: '🏋️',
+    resize: '📏',
+    fitness: '💪',
+    trophy: '🏆',
+    stopwatch: '⏱️',
+    restaurant: '🍽️',
     'trending-up': '📈',
-    'bulb': '💡',
+    bulb: '💡',
     'plus-circle': '➕',
   };
-  return (
-    <Text style={{ fontSize: size, color }}>
-      {icons[name] || '●'}
-    </Text>
-  );
+  return <Text style={{ fontSize: size, color }}>{icons[name] || '●'}</Text>;
 };
 
 // Reusable Stat Card Component
@@ -95,13 +89,13 @@ export default function HomeScreen({ navigation }) {
   const motivationalQuotes = [
     "Your body can do it. It's your mind you need to convince.",
     "The only bad workout is the one that didn't happen.",
-    "Progress, not perfection.",
-    "Champions train, losers complain.",
+    'Progress, not perfection.',
+    'Champions train, losers complain.',
     "Believe you can and you're halfway there.",
-    "Strength does not come from physical capacity. It comes from an indomitable will.",
+    'Strength does not come from physical capacity. It comes from an indomitable will.',
   ];
   const [currentQuote] = useState(
-    motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+    motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)],
   );
 
   useEffect(() => {
@@ -133,10 +127,10 @@ export default function HomeScreen({ navigation }) {
 
   const calculateBMI = (weight, height) => {
     if (!weight || !height || height === 0) return 'N/A';
-    return (weight / ((height / 100) ** 2)).toFixed(1);
+    return (weight / (height / 100) ** 2).toFixed(1);
   };
 
-  const getBMICategory = (bmi) => {
+  const getBMICategory = bmi => {
     const bmiValue = parseFloat(bmi);
     if (isNaN(bmiValue)) return { category: 'N/A', color: '#B0B0B0' };
     if (bmiValue < 18.5) return { category: 'Underweight', color: '#3B82F6' };
@@ -176,7 +170,10 @@ export default function HomeScreen({ navigation }) {
                 <Text style={styles.greeting}>Good Morning</Text>
                 <Text style={styles.userName}>{user.name}! 👋</Text>
               </View>
-              <TouchableOpacity style={styles.profileButton} onPress={() => navigation?.navigate('Profile')}>
+              <TouchableOpacity
+                style={styles.profileButton}
+                onPress={() => navigation?.navigate('Profile')}
+              >
                 <Icon name="person-circle" size={40} color="white" />
               </TouchableOpacity>
             </View>
@@ -226,9 +223,13 @@ export default function HomeScreen({ navigation }) {
             <StatCard
               title="BMI"
               value={calculateBMI(user.weight, user.height)}
-              unit={getBMICategory(calculateBMI(user.weight, user.height)).category}
+              unit={
+                getBMICategory(calculateBMI(user.weight, user.height)).category
+              }
               icon="fitness"
-              color={getBMICategory(calculateBMI(user.weight, user.height)).color}
+              color={
+                getBMICategory(calculateBMI(user.weight, user.height)).color
+              }
               onPress={() => navigation?.navigate('Profile')}
             />
           </View>
@@ -281,6 +282,15 @@ export default function HomeScreen({ navigation }) {
           </View>
         </Animated.View>
       </ScrollView>
+      <TouchableOpacity
+        style={styles.chatbotFab}
+        onPress={() => navigation?.navigate('ChatBot')}
+        activeOpacity={0.8}
+      >
+        <View style={styles.chatbotIconContainer}>
+          <Text style={styles.chatbotIcon}>💬</Text>
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -503,5 +513,30 @@ const styles = StyleSheet.create({
     color: '#B0B0B0',
     marginTop: 10,
     fontSize: 16,
+  },
+  chatbotFab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 24,
+    zIndex: 99,
+  },
+
+  chatbotIconContainer: {
+    backgroundColor: '#5856D6',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+
+  chatbotIcon: {
+    fontSize: 28,
+    color: '#FFFFFF',
   },
 });

@@ -23,6 +23,7 @@ import LeaderboardScreen from '../screens/LeaderboardScreen';
 import WorkoutListScreen from '../screens/workoutListScreen';
 import WorkoutDetailScreen from '../screens/workoutDetailScreen';
 import WorkoutCategoriesScreen from '../screens/workoutCategoriesScreen';
+import ChatBotScreen from '../screens/chatBotScreen'; 
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -46,6 +47,7 @@ function AuthenticatedStack() {
             <Stack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
             <Stack.Screen name="MainTabs" component={MainTabs} />
             <Stack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
+            <Stack.Screen name="ChatBot" component={ChatBotScreen}/>
         </Stack.Navigator>
     );
 }

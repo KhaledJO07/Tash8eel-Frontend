@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -8,15 +8,19 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
 
-const BACKEND_URL = 'http://192.168.1.14:5000/routes/chatBot'; // ← replace with your local or deployed backend
+const BACKEND_URL = 'http://192.168.1.10:3000/chat'; // Update with your IP or deployed URL
 
 const ChatBotScreen = () => {
   const [message, setMessage] = useState('');
   const [conversation, setConversation] = useState([]);
   const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef();
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -36,6 +40,7 @@ const ChatBotScreen = () => {
 
       setConversation(prev => [...prev, botMessage]);
     } catch (error) {
+      console.error('Chat error:', error);
       setConversation(prev => [
         ...prev,
         {
@@ -48,42 +53,62 @@ const ChatBotScreen = () => {
     }
   };
 
+  // Scroll to bottom when a new message is added
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }
+  }, [conversation]);
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        style={styles.chatBox}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        {conversation.map((msg, index) => (
-          <Text
-            key={index}
-            style={[
-              styles.message,
-              msg.sender === 'You' ? styles.userMessage : styles.botMessage,
-            ]}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.chatBox}
+            contentContainerStyle={{ paddingVertical: 10 }}
           >
-            <Text style={styles.sender}>{msg.sender}:</Text> {msg.text}
-          </Text>
-        ))}
-        {loading && (
-          <Text style={styles.botMessage}>
-            <Text style={styles.sender}>FitnessBot:</Text> Typing...
-          </Text>
-        )}
-      </ScrollView>
+            {conversation.map((msg, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.messageContainer,
+                  msg.sender === 'You' ? styles.userBubble : styles.botBubble,
+                ]}
+              >
+                <Text style={styles.sender}>{msg.sender}:</Text>
+                <Text style={styles.messageText}>{msg.text}</Text>
+              </View>
+            ))}
+            {loading && (
+              <View style={styles.botBubble}>
+                <Text style={styles.sender}>FitnessBot:</Text>
+                <ActivityIndicator
+                  size="small"
+                  color="#333"
+                  style={{ marginTop: 5 }}
+                />
+              </View>
+            )}
+          </ScrollView>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Ask about workouts, diet, or supplements..."
-          value={message}
-          onChangeText={setMessage}
-        />
-        <Button title="Send" onPress={sendMessage} />
-      </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Ask about workouts, diet, or supplements..."
+              value={message}
+              onChangeText={setMessage}
+              onSubmitEditing={sendMessage}
+              returnKeyType="send"
+            />
+            <Button title="Send" onPress={sendMessage} />
+          </View>
+        </View>
+        </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 };
@@ -94,29 +119,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4f4f4',
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'android' ? 40 : 0,
   },
   chatBox: {
     flex: 1,
     paddingHorizontal: 15,
   },
-  message: {
-    fontSize: 16,
-    marginVertical: 6,
+  messageContainer: {
+    borderRadius: 12,
     padding: 10,
-    borderRadius: 8,
+    marginVertical: 6,
     maxWidth: '85%',
   },
-  userMessage: {
+  userBubble: {
     backgroundColor: '#d1e7dd',
     alignSelf: 'flex-end',
   },
-  botMessage: {
+  botBubble: {
     backgroundColor: '#e2e3e5',
     alignSelf: 'flex-start',
   },
   sender: {
     fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 3,
+  },
+  messageText: {
+    fontSize: 16,
     color: '#333',
   },
   inputContainer: {
