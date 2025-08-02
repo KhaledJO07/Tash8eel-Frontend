@@ -18,16 +18,13 @@ import ProfileScreen from '../screens/ProfileScreen';
 import TimerScreen from '../screens/TimerScreen';
 import FitnessProfileScreen from '../screens/FitnessProfileScreen';
 import ChallengeScreen from '../screens/ChallengeScreen';
-import CreateChallengeScreen from '../screens/CreateChallengeScreen';
 import LeaderboardScreen from '../screens/LeaderboardScreen';
 import WorkoutListScreen from '../screens/workoutListScreen';
 import WorkoutDetailScreen from '../screens/workoutDetailScreen';
 import WorkoutCategoriesScreen from '../screens/workoutCategoriesScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
 import WorkoutDtlScreen from '../screens/workoutDtlScreen';
-import  DayDetailScreen from '../screens/DayDetailScreen';
-
-
+import DayDetailScreen from '../screens/DayDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,30 +54,30 @@ function AuthenticatedStack() {
 }
 
 function ChallengeStackNavigator() {
-  return (
-    <ChallengeStack.Navigator screenOptions={{ headerShown: false }}>
-      <ChallengeStack.Screen
-        name="ChallengeList"
-        component={ChallengeScreen}
-        options={{ title: 'Challenges' }}
-      />
-      <ChallengeStack.Screen
-        name="ChallengeDetail"
-        component={ChallengeDetailScreen}
-        options={{ title: 'Challenge Details' }}
-      />
-      <ChallengeStack.Screen
-          name="DayDetail"
-          component={DayDetailScreen}
-          options={({ route }) => ({ title: `Day ${route.params.day}` })}
-        />
-        <ChallengeStack.Screen
-          name="WorkoutDtl"
-          component={WorkoutDtlScreen}
-          options={({ route }) => ({ title: route.params.workout.name })}
-        />
-    </ChallengeStack.Navigator>
-  );
+    return (
+        <ChallengeStack.Navigator screenOptions={{ headerShown: false }}>
+            <ChallengeStack.Screen
+                name="ChallengeList"
+                component={ChallengeScreen}
+                options={{ title: 'Challenges' }}
+            />
+            <ChallengeStack.Screen
+                name="ChallengeDetail"
+                component={ChallengeDetailScreen}
+                options={{ title: 'Challenge Details' }}
+            />
+            <ChallengeStack.Screen
+                name="DayDetail"
+                component={DayDetailScreen}
+                options={({ route }) => ({ title: `Day ${route.params.day}` })}
+            />
+            <ChallengeStack.Screen
+                name="WorkoutDtl"
+                component={WorkoutDtlScreen}
+                options={({ route }) => ({ title: route.params.workout.name })}
+            />
+        </ChallengeStack.Navigator>
+    );
 }
 
 
@@ -148,9 +145,7 @@ function MainTabs() {
                         case 'Challenges':
                             iconName = 'trophy-outline';
                             break;
-                        case 'Create':
-                            iconName = 'add-circle-outline';
-                            break;
+                        // Removed the 'Create' case
                         case 'Workouts':
                             iconName = 'barbell-outline';
                             break;
@@ -191,7 +186,7 @@ function MainTabs() {
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Challenges" component={ChallengeStackNavigator} />
-            <Tab.Screen name="Create" component={CreateChallengeScreen} />
+            {/* Removed the Tab.Screen for "Create" */}
             <Tab.Screen name="Workouts" component={WorkoutStackNavigator} />
             <Tab.Screen name="Leaderboard" component={LeaderboardScreen} />
             <Tab.Screen name="Timer" component={TimerScreen} />
@@ -202,7 +197,7 @@ function MainTabs() {
 
 export default function AppNavigator() {
     const isSignedIn = useSelector(state => state.auth.isSignedIn);
-    
+
     // The conditional rendering is now at the top level
     return (
         <NavigationContainer>
