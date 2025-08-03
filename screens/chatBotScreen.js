@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -6,163 +6,107 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
   ActivityIndicator,
 } from 'react-native';
-import axios from 'axios';
+import { API_BASE_URL_JO } from '../config';
 
-const BACKEND_URL = 'http://192.168.1.10:3000/chat'; // Update with your IP or deployed URL
-
-const ChatBotScreen = () => {
-  const [message, setMessage] = useState('');
-  const [conversation, setConversation] = useState([]);
+export default function ChatBotScreen() {
+  const [messages, setMessages] = useState([]);
+  const [userInput, setUserInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef();
+  const scrollViewRef = useRef(null);
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
-
-    const userMessage = { sender: 'You', text: message };
-    setConversation(prev => [...prev, userMessage]);
-    setMessage('');
+    if (!userInput.trim()) return;
+    const userMessage = { role: 'user', content: userInput };
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
     setLoading(true);
 
     try {
-      const response = await axios.post(BACKEND_URL, { message });
+      const res = await fetch(`${API_BASE_URL_JO}/api/chatbot/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userInput }),
+      });
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          { role: 'bot', content: 'Server error or invalid response.' },
+        ]);
+        setLoading(false);
+        return;
+      }
 
-      const botMessage = {
-        sender: 'FitnessBot',
-        text: response.data.reply || '⚠️ Sorry, something went wrong.',
-      };
+      // Handle Hugging Face response format
+      let botReply = '';
+      if (Array.isArray(data.reply)) {
+        botReply = data.reply[0]?.generated_text || 'No response.';
+      } else if (typeof data.reply === 'string') {
+        botReply = data.reply;
+      } else {
+        botReply = 'Unexpected response format.';
+      }
 
-      setConversation(prev => [...prev, botMessage]);
-    } catch (error) {
-      console.error('Chat error:', error);
-      setConversation(prev => [
+      setMessages(prev => [...prev, { role: 'bot', content: botReply }]);
+    } catch (err) {
+      console.log('Error:', err);
+      setMessages(prev => [
         ...prev,
-        {
-          sender: 'FitnessBot',
-          text: '❌ Could not connect to the fitness AI. Please try again later.',
-        },
+        { role: 'bot', content: 'Error talking to bot.' },
       ]);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   };
 
-  // Scroll to bottom when a new message is added
-  useEffect(() => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollToEnd({ animated: true });
-    }
-  }, [conversation]);
-
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={{ flex: 1 }}>
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.chatBox}
-            contentContainerStyle={{ paddingVertical: 10 }}
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.chatBox}
+        ref={scrollViewRef}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {messages.map((msg, index) => (
+          <Text
+            key={index}
+            style={msg.role === 'user' ? styles.userMsg : styles.botMsg}
           >
-            {conversation.map((msg, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.messageContainer,
-                  msg.sender === 'You' ? styles.userBubble : styles.botBubble,
-                ]}
-              >
-                <Text style={styles.sender}>{msg.sender}:</Text>
-                <Text style={styles.messageText}>{msg.text}</Text>
-              </View>
-            ))}
-            {loading && (
-              <View style={styles.botBubble}>
-                <Text style={styles.sender}>FitnessBot:</Text>
-                <ActivityIndicator
-                  size="small"
-                  color="#333"
-                  style={{ marginTop: 5 }}
-                />
-              </View>
-            )}
-          </ScrollView>
-
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ask about workouts, diet, or supplements..."
-              value={message}
-              onChangeText={setMessage}
-              onSubmitEditing={sendMessage}
-              returnKeyType="send"
-            />
-            <Button title="Send" onPress={sendMessage} />
+            {msg.content}
+          </Text>
+        ))}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#888" />
+            <Text style={styles.loadingText}>Bot is typing...</Text>
           </View>
-        </View>
-        </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
-  );
-};
+        )}
+      </ScrollView>
 
-export default ChatBotScreen;
+      <TextInput
+        style={styles.input}
+        value={userInput}
+        onChangeText={setUserInput}
+        placeholder="Ask the AI..."
+        editable={!loading}
+      />
+      <Button title="Send" onPress={sendMessage} disabled={!userInput.trim() || loading} />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f4f4f4',
-    paddingTop: Platform.OS === 'android' ? 40 : 0,
-  },
-  chatBox: {
-    flex: 1,
-    paddingHorizontal: 15,
-  },
-  messageContainer: {
-    borderRadius: 12,
-    padding: 10,
-    marginVertical: 6,
-    maxWidth: '85%',
-  },
-  userBubble: {
-    backgroundColor: '#d1e7dd',
-    alignSelf: 'flex-end',
-  },
-  botBubble: {
-    backgroundColor: '#e2e3e5',
-    alignSelf: 'flex-start',
-  },
-  sender: {
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 3,
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    height: 44,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    marginRight: 8,
-    borderRadius: 8,
-  },
+  container: { flex: 1, padding: 16 },
+  chatBox: { flex: 1, marginBottom: 10 },
+  userMsg: { textAlign: 'right', color: 'blue', marginBottom: 4 },
+  botMsg: { textAlign: 'left', color: 'green', marginBottom: 4 },
+  input: { borderWidth: 1, padding: 10, marginBottom: 10 },
+  loadingContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  loadingText: { marginLeft: 8, color: '#888' },
 });

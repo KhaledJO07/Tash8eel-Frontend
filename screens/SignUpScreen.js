@@ -100,7 +100,6 @@ export default function SignUpScreen({ navigation }) {
       }
     } catch (err) {
       const errorMessage = err?.response?.data?.message || 'Signup failed. Please try again.';
-      console.error('Signup Error:', err);
       showCustomToast(`Signup Error: ${errorMessage}`);
     } finally {
       setSubmitting(false);

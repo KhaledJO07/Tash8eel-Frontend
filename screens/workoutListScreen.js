@@ -1,19 +1,22 @@
 import React from 'react'
-import { View, Text, FlatList, TouchableOpacity,StyleSheet } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native'
 import { useSelector } from 'react-redux'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import LottieView from 'lottie-react-native'
+import Header from '../components/Header'; // Import the Header component
 
 export default function WorkoutListScreen() {
-  const route      = useRoute()
+  const route = useRoute()
   const navigation = useNavigation()
-  const category   = route.params?.category
-  const workouts   = useSelector(s => s.workouts.data)
-  const filtered   = workouts.filter(w => w.category === category)
+  const category = route.params?.category
+  const workouts = useSelector(s => s.workouts.data)
+  const filtered = workouts.filter(w => w.category === category)
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{category} Workouts</Text>
+    <SafeAreaView style={styles.container}>
+      {/* Replaced the title with the Header component */}
+      <Header title={`${category} Workouts`} onBackPress={() => navigation.goBack()} />
+
       <FlatList
         data={filtered}
         keyExtractor={item => item._id}
@@ -34,28 +37,21 @@ export default function WorkoutListScreen() {
           </TouchableOpacity>
         )}
       />
-    </View>
+    </SafeAreaView>
   )
 }
-
-// (keep your existing styles unchanged)
-
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1C1C1E', // Dark background to match the app theme
-    padding: 24, // Consistent padding
+    // Removed padding as the Header component has its own padding
   },
-  title: {
-    fontSize: 28, // Consistent title size
-    fontWeight: '700', // Consistent title weight
-    color: '#FFFFFF', // White text for dark background
-    marginBottom: 20,
-    textAlign: 'center', // Center the title
-  },
+  // The title style block is removed as it's now handled by the Header component.
   listContent: {
+    paddingHorizontal: 24, // Added horizontal padding to the list content
     paddingBottom: 60, // Ensure enough space at the bottom (e.g., for tab bar)
+    paddingTop: 10, // Add a bit of space below the header
   },
   card: {
     backgroundColor: '#3A3A3C', // Darker background for cards
@@ -73,8 +69,6 @@ const styles = StyleSheet.create({
     width: 150, // Keep original size or adjust as needed for list view
     height: 150,
     marginBottom: 10, // Add space below Lottie animation
-    // If you want a background/shadow directly on the Lottie, it's difficult without a wrapper View.
-    // These properties would ideally be on a wrapper View for the Lottie.
   },
   name: {
     marginTop: 10, // Keep original margin or adjust

@@ -11,15 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  SafeAreaView,
 } from 'react-native';
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
 import { API_BASE_URL_JO } from '../config';
-import { useDispatch, useSelector } from 'react-redux'; // Import useDispatch and useSelector
+import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
-import { setProfile } from '../app/features/userSlice'; // Import the setProfile action
+import { setProfile } from '../app/features/userSlice';
+import Header from '../components/Header'; // Import the Header component
 
 // --- Toast Component (Reused from SignUpScreen for consistency) ---
 const Toast = ({ message, isVisible, onHide }) => {
@@ -56,11 +58,12 @@ const Toast = ({ message, isVisible, onHide }) => {
 // --- End Toast Component ---
 
 
-export default function ProfileScreen({ route }) {
-  const dispatch = useDispatch(); // Initialize useDispatch
+export default function ProfileScreen({ route, navigation }) { // Added navigation prop
+  const dispatch = useDispatch();
   const token = useSelector(state => state.auth.token);
+  const reduxProfile = useSelector(state => state.user.profile);
 
-  const [profile, setProfileState] = useState({ // Renamed setProfile to setProfileState to avoid conflict with action creator
+  const [profile, setProfileState] = useState({
     name: '',
     age: '',
     bio: '',
@@ -272,125 +275,128 @@ export default function ProfileScreen({ route }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.root}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#1C1C1E' }}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Text style={styles.header}>Profile</Text>
+        {/* The new Header component is added here */}
+        <Header title="Profile" onBackPress={() => navigation.goBack()} />
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* The old header text is removed */}
+          <View style={styles.profileHeaderSection}>
+            <TouchableOpacity onPress={pickImage} style={styles.imageWrapper} activeOpacity={0.8}>
+              <Image source={getProfileImageSource()} style={styles.avatar} />
+              <View style={styles.cameraIconContainer}>
+                <Text style={styles.cameraIcon}>📸</Text>
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.profileName}>{profile.name || 'Your Name'}</Text>
+          </View>
 
-        <View style={styles.profileHeaderSection}>
-          <TouchableOpacity onPress={pickImage} style={styles.imageWrapper} activeOpacity={0.8}>
-            <Image source={getProfileImageSource()} style={styles.avatar} />
-            <View style={styles.cameraIconContainer}>
-              <Text style={styles.cameraIcon}>📸</Text>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your Name"
+              placeholderTextColor="#888"
+              value={profile.name}
+              multiline
+              onChangeText={(val) => setProfileState({ ...profile, name: val })}
+            />
+            <Text style={styles.label}>Age</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your age"
+              placeholderTextColor="#888"
+              value={profile.age}
+              keyboardType="numeric"
+              onChangeText={(val) => setProfileState({ ...profile, age: val })}
+            />
+
+            <Text style={styles.label}>Bio</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Tell us about yourself"
+              placeholderTextColor="#888"
+              value={profile.bio}
+              multiline
+              onChangeText={(val) => setProfileState({ ...profile, bio: val })}
+            />
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Fitness Details</Text>
+            <Text style={styles.label}>Height (cm)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 175"
+              placeholderTextColor="#888"
+              value={profile.height}
+              keyboardType="numeric"
+              onChangeText={(val) => setProfileState({ ...profile, height: val })}
+            />
+
+            <Text style={styles.label}>Weight (kg)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 70"
+              placeholderTextColor="#888"
+              value={profile.weight}
+              keyboardType="numeric"
+              onChangeText={(val) => setProfileState({ ...profile, weight: val })}
+            />
+
+            <Text style={styles.label}>Goal</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={profile.goal}
+                onValueChange={(val) => setProfileState({ ...profile, goal: val })}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+                mode="dropdown"
+              >
+                {goalOptions.map((opt) => (
+                  <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                ))}
+              </Picker>
             </View>
+
+            <Text style={styles.label}>Activity Level</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={profile.activityLevel}
+                onValueChange={(val) => setProfileState({ ...profile, activityLevel: val })}
+                style={styles.picker}
+                itemStyle={styles.pickerItem}
+                mode="dropdown"
+              >
+                {activityLevelOptions.map((opt) => (
+                  <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <TouchableOpacity onPress={handleSave} style={styles.buttonWrapper} disabled={saving}>
+            <LinearGradient
+              colors={["#5856D6", "#8A56D6"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.button}
+            >
+              {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Profile</Text>}
+            </LinearGradient>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{profile.name || 'Your Name'}</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your Name"
-            placeholderTextColor="#888"
-            value={profile.name}
-            multiline
-            onChangeText={(val) => setProfileState({ ...profile, name: val })}
-          />
-          <Text style={styles.label}>Age</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter your age"
-            placeholderTextColor="#888"
-            value={profile.age}
-            keyboardType="numeric"
-            onChangeText={(val) => setProfileState({ ...profile, age: val })}
-          />
-
-          <Text style={styles.label}>Bio</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Tell us about yourself"
-            placeholderTextColor="#888"
-            value={profile.bio}
-            multiline
-            onChangeText={(val) => setProfileState({ ...profile, bio: val })}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fitness Details</Text>
-          <Text style={styles.label}>Height (cm)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. 175"
-            placeholderTextColor="#888"
-            value={profile.height}
-            keyboardType="numeric"
-            onChangeText={(val) => setProfileState({ ...profile, height: val })}
-          />
-
-          <Text style={styles.label}>Weight (kg)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. 70"
-            placeholderTextColor="#888"
-            value={profile.weight}
-            keyboardType="numeric"
-            onChangeText={(val) => setProfileState({ ...profile, weight: val })}
-          />
-
-          <Text style={styles.label}>Goal</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={profile.goal}
-              onValueChange={(val) => setProfileState({ ...profile, goal: val })}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-              mode="dropdown"
-            >
-              {goalOptions.map((opt) => (
-                <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-              ))}
-            </Picker>
-          </View>
-
-          <Text style={styles.label}>Activity Level</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={profile.activityLevel}
-              onValueChange={(val) => setProfileState({ ...profile, activityLevel: val })}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-              mode="dropdown"
-            >
-              {activityLevelOptions.map((opt) => (
-                <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
-              ))}
-            </Picker>
-          </View>
-        </View>
-
-        <TouchableOpacity onPress={handleSave} style={styles.buttonWrapper} disabled={saving}>
-          <LinearGradient
-            colors={["#5856D6", "#8A56D6"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.button}
-          >
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Profile</Text>}
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <Toast message={toastMessage} isVisible={showToast} onHide={hideCustomToast} />
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -403,13 +409,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 24,
     paddingBottom: 60,
-  },
-  header: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 30,
-    textAlign: 'center',
   },
   profileHeaderSection: {
     alignItems: 'center',
