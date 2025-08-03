@@ -1,121 +1,52 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  ScrollView,
-  Text,
-  StyleSheet,
-  View,
-  Animated,
-  SafeAreaView
-} from 'react-native';
-import LottieView from 'lottie-react-native';
-import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
+//workoutDetailScreen
 
-// --- Toast Component (Reused for consistency across screens) ---
-const Toast = ({ message, isVisible, onHide }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (isVisible) {
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.delay(2000),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        onHide();
-      });
-    }
-  }, [isVisible, fadeAnim, onHide]);
-
-  if (!isVisible) return null;
-
-  return (
-    <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]}>
-      <Text style={styles.toastText}>{message}</Text>
-    </Animated.View>
-  );
-};
-// --- End Toast Component ---
+import React from 'react'
+import { ScrollView, Text, View,StyleSheet } from 'react-native'
+import LottieView from 'lottie-react-native'
 
 export default function WorkoutDetailScreen({ route }) {
-  const { workout } = route.params;
-  const navigation = useNavigation();
-
-  const [toastMessage, setToastMessage] = useState('');
-  const [showToast, setShowToast] = useState(false);
-
-  const showCustomToast = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
-  };
-
-  const hideCustomToast = () => {
-    setShowToast(false);
-    setToastMessage('');
-  };
-
-  useEffect(() => {
-    if (!workout) {
-      showCustomToast('Workout details not found. Please go back and select a workout.');
-    }
-  }, [workout]);
-
-  const animationSource = workout.animationFile
-    ? { uri: `${API_BASE_URL_JO}/animations/${workout.animationFile}` }
-    : null;
+  const { workout } = route.params
+  const animationUrl = workout.animationUrl
 
   return (
-    <SafeAreaView style={styles.rootContainer}>
-      {/* Replaced the title with the Header component */}
-      <Header title={workout?.name || 'Workout Details'} onBackPress={() => navigation.goBack()} />
-
+    <View style={styles.rootContainer}>
       <ScrollView contentContainerStyle={styles.scrollContentContainer}>
+        <Text style={styles.title}>{workout.name}</Text>
 
-        {/* Lottie Animation or Placeholder */}
         <View style={styles.animationContainer}>
-          {animationSource ? (
-            <LottieView
-              source={animationSource}
-              autoPlay
-              loop
-              style={styles.animation}
-              onError={(error) => showCustomToast(`Failed to load animation: ${error.message}`)}
-            />
-          ) : (
-            <View style={styles.noAnimationPlaceholder}>
-              <Text style={styles.noAnimationText}>No animation available</Text>
-              <Text style={styles.noAnimationEmoji}>🚫</Text>
-            </View>
-          )}
+          {animationUrl
+            ? <LottieView
+                source={{ uri: animationUrl }}
+                autoPlay
+                loop
+                style={styles.animation}
+              />
+            : <View style={styles.noAnimationPlaceholder}>
+                <Text style={styles.noAnimationText}>No animation available</Text>
+              </View>
+          }
         </View>
 
         <View style={styles.detailsCard}>
           <Text style={styles.label}>Description</Text>
-          <Text style={styles.text}>{workout.description || 'No description available.'}</Text>
+          <Text style={styles.text}>{workout.description}</Text>
 
           <Text style={styles.label}>Tips</Text>
-          <Text style={styles.text}>{workout.tips || 'No specific tips for this workout.'}</Text>
+          <Text style={styles.text}>{workout.tips || '—'}</Text>
 
           <Text style={styles.label}>Target Muscles</Text>
-          <Text style={styles.text}>{workout.targetMuscles ? workout.targetMuscles.join(', ') : 'N/A'}</Text>
+          <Text style={styles.text}>{workout.targetMuscles.join(', ')}</Text>
 
           <Text style={styles.label}>Duration</Text>
-          <Text style={styles.text}>{workout.duration || 'N/A'}</Text>
+          <Text style={styles.text}>{workout.duration}</Text>
         </View>
       </ScrollView>
-
-      <Toast message={toastMessage} isVisible={showToast} onHide={hideCustomToast} />
-    </SafeAreaView>
-  );
+    </View>
+  )
 }
+
+// (keep your existing styles unchanged)
+
 
 const styles = StyleSheet.create({
   rootContainer: {
@@ -124,11 +55,17 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     flexGrow: 1,
-    paddingHorizontal: 24, // Adjusted padding to work with the new header
+    padding: 24,
     alignItems: 'center',
     paddingBottom: 60,
   },
-  // The 'title' style is now removed as it's handled by the Header component.
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   animationContainer: {
     backgroundColor: '#3A3A3C',
     borderRadius: 16,
@@ -141,8 +78,8 @@ const styles = StyleSheet.create({
     elevation: 8,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 270,
+    justifyContent: 'center', // Center content vertically in placeholder
+    minHeight: 270, // Ensure a minimum height even without animation
   },
   animation: {
     width: 250,
@@ -151,7 +88,7 @@ const styles = StyleSheet.create({
   noAnimationPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 250,
+    height: 250, // Match animation height
     width: '100%',
   },
   noAnimationText: {

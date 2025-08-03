@@ -1,62 +1,36 @@
 import React, { useEffect } from 'react';
-import {
-  SafeAreaView,
-  FlatList,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { SafeAreaView, FlatList, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { fetchChallenges } from '../app/features/challengesSlice';
 import { colors } from '../theme/colors';
-import Header from '../components/Header'; // Assuming this is your custom Header component
+import Header from '../components/Header';
 
 export default function ChallengesListScreen({ navigation }) {
   const dispatch = useDispatch();
+  // Get all challenges from the Redux store
   const challenges = useSelector(s => s.challenges.list);
-  const status = useSelector(s => s.challenges.status);
-  const error = useSelector(s => s.challenges.error);
 
   useEffect(() => {
-    // Only fetch challenges if the status is not 'loading' or 'succeeded'
-    if (status === 'idle') {
-      dispatch(fetchChallenges());
-    }
-  }, [dispatch, status]);
+    dispatch(fetchChallenges());
+  }, []);
 
-  // Render a loading state while fetching data
-  if (status === 'loading') {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <Text style={styles.loadingText}>Loading challenges...</Text>
-      </SafeAreaView>
-    );
-  }
+  // NEW: Sort challenges alphabetically by title and then take the first 5
+  const sortedChallenges = [...challenges].sort((a, b) => {
+    return a.title.localeCompare(b.title);
+  }).slice(0, 5);
 
-  // Render an error state if fetching fails
-  if (status === 'failed') {
-    return (
-      <SafeAreaView style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>Failed to load challenges: {error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => dispatch(fetchChallenges())}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
-
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item, index }) => (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
       onPress={() => navigation.navigate('ChallengeDetail', { id: item._id })}
     >
+      
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.title}</Text>
         <View style={styles.cardMeta}>
-          <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+          <Ionicons name="calendar" size={16} color={colors.primary} />
           <Text style={styles.cardMetaText}>{item.durationDays} days</Text>
         </View>
       </View>
@@ -67,7 +41,8 @@ export default function ChallengesListScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <Header title="Challenges" />
       <FlatList
-        data={challenges}
+        // Use the new sorted and sliced challenges list
+        data={sortedChallenges}
         renderItem={renderItem}
         keyExtractor={item => item._id}
         contentContainerStyle={styles.list}
@@ -77,17 +52,8 @@ export default function ChallengesListScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  list: {
-    padding: 16,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  list: { padding: 16 },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
@@ -96,47 +62,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 3
   },
-  cardContent: {
-    flex: 1,
+  numberContainer: {
+    backgroundColor: colors.primary,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
+  numberText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  cardContent: { flex: 1 },
   cardTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.text
   },
-  cardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  cardMetaText: {
-    marginLeft: 6,
-    color: colors.textSecondary,
-    fontSize: 14,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  errorText: {
-    fontSize: 16,
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  cardMetaText: { marginLeft: 6, color: colors.textSecondary }
 });
