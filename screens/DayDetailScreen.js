@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+// screens/DayDetailScreen.js
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   Text,
@@ -6,14 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  View
+  
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import LinearGradient from 'react-native-linear-gradient';
 import { fetchChallengeDetail, completeDay } from '../app/features/challengesSlice';
 import { colors } from '../theme/colors';
-import Header from '../components/Header'; // Re-import the Header component
+import Header from '../components/Header';
 import WorkoutCard from '../components/WorkoutCard';
+import CompletionModal from '../components/CompletionModal';
+import moment from 'moment';
 
 export default function DayDetailScreen({ route, navigation }) {
   const { challengeId, day } = route.params;
@@ -23,12 +25,26 @@ export default function DayDetailScreen({ route, navigation }) {
   const loading = status === 'loading';
   const userId = useSelector(s => s.user.profile?._id);
 
-  // Fetch challenge details only if they are not already available
+  const [modalVisible, setModalVisible] = useState(false);
+
+  // Fetch (or re-fetch) the challenge detail
   useEffect(() => {
-    if (userId && (!detail || detail._id !== challengeId)) {
+    if (!detail || detail._id !== challengeId) {
       dispatch(fetchChallengeDetail({ id: challengeId, userId }));
     }
   }, [challengeId, detail, userId, dispatch]);
+
+  // When all days are complete, vibrate + show modal
+  useEffect(() => {
+    if (
+      detail &&
+      progress &&
+      progress.completedDays.length === detail.durationDays
+    ) {
+      // Vibration.vibrate(100);
+      setModalVisible(true);
+    }
+  }, [detail, progress]);
 
   if (loading || !detail) {
     return (
@@ -36,21 +52,17 @@ export default function DayDetailScreen({ route, navigation }) {
         <ActivityIndicator size="large" color={colors.accent} />
       </SafeAreaView>
     );
-    //
   }
 
-  // Filter workouts for the specific day
   const workoutsForDay = detail.workouts
     .filter(w => w.day === day)
     .map(w => w.workoutId);
-
-  // Check if the current day has been completed
   const completed = progress?.completedDays.includes(day);
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Restored: The original Header component */}
-      <Header title={`Day ${day}`} onBackPress={() => navigation.goBack()} />
+      <Header title={`Day ${day}`} />
+
       <FlatList
         data={workoutsForDay}
         keyExtractor={w => w._id}
@@ -58,86 +70,58 @@ export default function DayDetailScreen({ route, navigation }) {
         renderItem={({ item }) => (
           <WorkoutCard
             workout={item}
-            onPress={() => navigation.navigate('WorkoutDtl', { workout: item })}
+            onPress={() =>
+              navigation.navigate('WorkoutDtl', { workout: item })
+            }
+            theme="dark"
           />
         )}
-        columnWrapperStyle={styles.listRow}
         contentContainerStyle={styles.list}
       />
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={() => !completed && dispatch(completeDay({ id: challengeId, userId, day }))}
-          disabled={completed}
-          activeOpacity={0.9}
-          style={styles.completeButtonWrapper}
-        >
-          {completed ? (
-            <View style={styles.completeButtonDisabled}>
-              <Text style={styles.completeText}>
-                ✓ Day Complete
-              </Text>
-            </View>
-          ) : (
-            <LinearGradient
-              colors={["#5856D6", "#8A56D6"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.completeButton}
-            >
-              <Text style={styles.completeText}>
-                Mark Day Complete
-              </Text>
-            </LinearGradient>
-          )}
-        </TouchableOpacity>
-      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.completeButton,
+          completed && styles.completeButtonDone,
+        ]}
+        onPress={() =>
+          !completed &&
+          dispatch(completeDay({ id: challengeId, userId, day }))
+        }
+        disabled={completed}
+      >
+        <Text style={styles.completeText}>
+          {completed ? '✓ Day Complete' : 'Mark Day Complete'}
+        </Text>
+      </TouchableOpacity>
+
+      <CompletionModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        challengeTitle={detail.title}
+        completionDate={moment().format('MMMM D, YYYY')}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.background
+    backgroundColor: colors.background,
   },
-  list: {
-    paddingHorizontal: 16,
-    paddingTop: 16
-  },
-  listRow: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  buttonContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  completeButtonWrapper: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: 10,
-  },
+  list: { paddingHorizontal: 16, paddingTop: 16 },
   completeButton: {
-    paddingVertical: 16,
+    backgroundColor: colors.accent,
+    paddingVertical: 14,
+    borderRadius: 8,
     alignItems: 'center',
-    borderRadius: 12,
+    margin: 16,
   },
-  completeButtonDisabled: {
-    backgroundColor: colors.disabled,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  completeText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16
-  }
+  completeButtonDone: { backgroundColor: colors.border },
+  completeText: { color: '#FFF', fontWeight: '600', fontSize: 16 },
 });
+
