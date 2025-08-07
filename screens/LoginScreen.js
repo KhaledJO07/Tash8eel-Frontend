@@ -1,4 +1,4 @@
-import React, { useEffect,useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,35 +19,35 @@ import { API_BASE_URL_JO } from '../config';
 
 // Simple Toast component (copied from SignUpScreen for consistency)
 const Toast = ({ message, isVisible, onHide }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    useEffect(() => {
-        if (isVisible) {
-            Animated.sequence([
-                Animated.timing(fadeAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-                Animated.delay(2000),
-                Animated.timing(fadeAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }),
-            ]).start(() => {
-                onHide();
-            });
-        }
-    }, [isVisible, fadeAnim, onHide]);
+  useEffect(() => {
+    if (isVisible) {
+      Animated.sequence([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.delay(2000),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        onHide();
+      });
+    }
+  }, [isVisible, fadeAnim, onHide]);
 
-    if (!isVisible) return null;
+  if (!isVisible) return null;
 
-    return (
-        <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]}>
-            <Text style={styles.toastText}>{message}</Text>
-        </Animated.View>
-    );
+  return (
+    <Animated.View style={[styles.toastContainer, { opacity: fadeAnim }]}>
+      <Text style={styles.toastText}>{message}</Text>
+    </Animated.View>
+  );
 };
 
 export default function LoginScreen({ navigation }) {
@@ -108,7 +108,7 @@ export default function LoginScreen({ navigation }) {
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => setEmail(text.toLowerCase())}
         />
         <TextInput
           style={styles.input}
@@ -155,7 +155,7 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
+  container: {
     flex: 1,
     backgroundColor: '#1C1C1E',
     justifyContent: 'center',
