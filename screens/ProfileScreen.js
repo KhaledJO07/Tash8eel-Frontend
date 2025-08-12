@@ -21,7 +21,8 @@ import { API_BASE_URL_JO } from '../config';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { setProfile } from '../app/features/userSlice';
-import Header from '../components/Header'; // Import the Header component
+import Header from '../components/Header';
+import StreakStatsWidget from '../components/StreakStatsWidget';
 
 // --- Toast Component (Reused from SignUpScreen for consistency) ---
 const Toast = ({ message, isVisible, onHide }) => {
@@ -55,10 +56,26 @@ const Toast = ({ message, isVisible, onHide }) => {
     </Animated.View>
   );
 };
-// --- End Toast Component ---
 
+// NEW: Streak Stats Component
+const StreakStats = ({ currentStreak, longestStreak }) => {
+  return (
+    <View style={styles.streakStatsContainer}>
+      <View style={styles.streakCard}>
+        <Text style={styles.streakEmoji}>🔥</Text>
+        <Text style={styles.streakNumber}>{currentStreak || 0}</Text>
+        <Text style={styles.streakLabel}>Current Streak</Text>
+      </View>
+      <View style={styles.streakCard}>
+        <Text style={styles.streakEmoji}>🏆</Text>
+        <Text style={styles.streakNumber}>{longestStreak || 0}</Text>
+        <Text style={styles.streakLabel}>Best Streak</Text>
+      </View>
+    </View>
+  );
+};
 
-export default function ProfileScreen({ route, navigation }) { // Added navigation prop
+export default function ProfileScreen({ route, navigation }) {
   const dispatch = useDispatch();
   const token = useSelector(state => state.auth.token);
   const reduxProfile = useSelector(state => state.user.profile);
@@ -72,6 +89,8 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
     weight: '',
     goal: '',
     activityLevel: '',
+    currentStreak: 0,
+    longestStreak: 0,
   });
 
   const [imageUri, setImageUri] = useState(null);
@@ -110,7 +129,7 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
   // Use useFocusEffect to fetch data every time the screen is focused
   useFocusEffect(
     useCallback(() => {
-      let isMounted = true; // Flag to prevent state updates on unmounted component
+      let isMounted = true;
       const fetchProfile = async () => {
         if (!token) {
           showCustomToast('Authentication token not found. Please log in again.');
@@ -134,6 +153,8 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
               weight: res.data.weight ? String(res.data.weight) : '',
               goal: res.data.goal || '',
               activityLevel: res.data.activityLevel || '',
+              currentStreak: res.data.currentStreak || 0,
+              longestStreak: res.data.longestStreak || 0,
             });
           }
         } catch (error) {
@@ -151,9 +172,9 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
       fetchProfile();
 
       return () => {
-        isMounted = false; // Cleanup function to set the flag
+        isMounted = false;
       };
-    }, [token]) // Re-run effect if token changes
+    }, [token])
   );
 
   const pickImage = () => {
@@ -196,7 +217,7 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
       Object.entries(profile).forEach(([key, val]) => {
         if (numericFields.includes(key) && val !== '') {
           formData.append(key, Number(val));
-        } else if (key !== 'avatarUrl') {
+        } else if (key !== 'avatarUrl' && key !== 'currentStreak' && key !== 'longestStreak') {
           formData.append(key, val || '');
         }
       });
@@ -222,7 +243,6 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
 
       showCustomToast('Profile updated successfully!');
 
-      // The key fix: Dispatch the setProfile action with the data from the server.
       dispatch(setProfile({
         name: response.data.user.name || '',
         age: response.data.user.age ? String(response.data.user.age) : '',
@@ -232,9 +252,10 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
         weight: response.data.user.weight ? String(response.data.user.weight) : '',
         goal: response.data.user.goal || '',
         activityLevel: response.data.user.activityLevel || '',
+        currentStreak: response.data.user.currentStreak || 0,
+        longestStreak: response.data.user.longestStreak || 0,
       }));
 
-      // Update local state to match the Redux state
       setProfileState({
         name: response.data.user.name || '',
         age: response.data.user.age ? String(response.data.user.age) : '',
@@ -244,6 +265,8 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
         weight: response.data.user.weight ? String(response.data.user.weight) : '',
         goal: response.data.user.goal || '',
         activityLevel: response.data.user.activityLevel || '',
+        currentStreak: response.data.user.currentStreak || 0,
+        longestStreak: response.data.user.longestStreak || 0,
       });
       setImageUri(null);
     } catch (error) {
@@ -280,13 +303,11 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
         style={styles.root}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* The new Header component is added here */}
         <Header title="Profile" onBackPress={() => navigation.goBack()} />
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
         >
-          {/* The old header text is removed */}
           <View style={styles.profileHeaderSection}>
             <TouchableOpacity onPress={pickImage} style={styles.imageWrapper} activeOpacity={0.8}>
               <Image source={getProfileImageSource()} style={styles.avatar} />
@@ -295,6 +316,14 @@ export default function ProfileScreen({ route, navigation }) { // Added navigati
               </View>
             </TouchableOpacity>
             <Text style={styles.profileName}>{profile.name || 'Your Name'}</Text>
+
+            {/* NEW: Streak Stats Display */}
+            <StreakStatsWidget
+              currentStreak={profile.currentStreak}
+              longestStreak={profile.longestStreak}
+              totalChallenges={profile.totalChallengesCompleted || 0}
+              onPress={() => navigation.navigate('StreakLeaderboard')}
+            />
           </View>
 
           <View style={styles.section}>
@@ -444,6 +473,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     marginTop: 5,
+    marginBottom: 15,
+  },
+  // NEW: Streak Stats Styles
+  streakStatsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  streakCard: {
+    backgroundColor: '#3A3A3C',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  streakEmoji: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  streakNumber: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  streakLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#B0B0B0',
+    textAlign: 'center',
   },
   section: {
     backgroundColor: '#3A3A3C',

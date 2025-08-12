@@ -189,8 +189,13 @@ export default function HomeScreen({ navigation }) {
                   Goal: {user.weeklyGoal?.toLocaleString() || 0} steps
                 </Text>
                 <Text style={styles.streakText}>
-                  🔥 {user.streakDays || 0} day streak
+                  🔥 {user.currentStreak || 0} day streak
                 </Text>
+                {user.longestStreak > 0 && (
+                  <Text style={styles.bestStreakText}>
+                    🏆 Best: {user.longestStreak} days
+                  </Text>
+                )}
               </View>
             </View>
           </LinearGradient>
@@ -223,14 +228,38 @@ export default function HomeScreen({ navigation }) {
             <StatCard
               title="BMI"
               value={calculateBMI(user.weight, user.height)}
-              unit={
-                getBMICategory(calculateBMI(user.weight, user.height)).category
-              }
+              unit={getBMICategory(calculateBMI(user.weight, user.height)).category}
               icon="fitness"
-              color={
-                getBMICategory(calculateBMI(user.weight, user.height)).color
-              }
+              color={getBMICategory(calculateBMI(user.weight, user.height)).color}
               onPress={() => navigation?.navigate('Profile')}
+            />
+          </View>
+
+          {/* 🔥 NEW: Streak Stats Row */}
+          <View style={styles.statsGrid}>
+            <StatCard
+              title="Current Streak"
+              value={user.currentStreak || 0}
+              unit="days"
+              icon="trending-up"
+              color="#FF6B35"
+              onPress={() => navigation?.navigate('Profile')}
+            />
+            <StatCard
+              title="Best Streak"
+              value={user.longestStreak || 0}
+              unit="days"
+              icon="trophy"
+              color="#FFD700"
+              onPress={() => navigation?.navigate('Profile')}
+            />
+            <StatCard
+              title="Challenges"
+              value={user.totalChallengesCompleted || 0}
+              unit="done"
+              icon="fitness"
+              color="#4ADE80"
+              onPress={() => navigation?.navigate('Challenges')}
             />
           </View>
         </Animated.View>
@@ -467,9 +496,14 @@ const styles = StyleSheet.create({
   },
   quickActionButton: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center',      // Centers content horizontally
+    justifyContent: 'center',  // Centers content vertically
     height: 100,
+  },
+  quickActionContent: {
+    alignItems: 'center',      // Centers horizontally
+    justifyContent: 'center',  // Centers vertically  
+    flex: 1,                   // Takes full available space
   },
   quickActionText: {
     color: 'white',

@@ -7,15 +7,42 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  
+  Alert,
+  View,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchChallengeDetail, completeDay } from '../app/features/challengesSlice';
+import { updateUserStreak } from '../app/features/userSlice';
 import { colors } from '../theme/colors';
 import Header from '../components/Header';
 import WorkoutCard from '../components/WorkoutCard';
 import CompletionModal from '../components/CompletionModal';
 import moment from 'moment';
+
+// NEW: Streak Celebration Component
+const StreakCelebration = ({ streak, isNewRecord, onClose }) => {
+  if (streak <= 1) return null;
+
+  return (
+    <View style={styles.streakCelebration}>
+      <Text style={styles.celebrationEmoji}>🔥</Text>
+      <Text style={styles.celebrationTitle}>
+        {isNewRecord ? 'New Record!' : 'Streak Updated!'}
+      </Text>
+      <Text style={styles.celebrationText}>
+        {streak} day{streak !== 1 ? 's' : ''} in a row!
+      </Text>
+      {isNewRecord && (
+        <Text style={styles.celebrationSubtext}>
+          🏆 Personal best!
+        </Text>
+      )}
+      <TouchableOpacity style={styles.celebrationButton} onPress={onClose}>
+        <Text style={styles.celebrationButtonText}>Keep Going!</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default function DayDetailScreen({ route, navigation }) {
   const { challengeId, day } = route.params;
@@ -24,8 +51,12 @@ export default function DayDetailScreen({ route, navigation }) {
   const { detail, progress, status } = useSelector(s => s.challenges);
   const loading = status === 'loading';
   const userId = useSelector(s => s.user.profile?._id);
+  const token = useSelector(s => s.auth.token);
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [streakCelebrationVisible, setStreakCelebrationVisible] = useState(false);
+  const [streakData, setStreakData] = useState({ current: 0, isNewRecord: false });
+  const [completingDay, setCompletingDay] = useState(false);
 
   // Fetch (or re-fetch) the challenge detail
   useEffect(() => {
@@ -34,17 +65,54 @@ export default function DayDetailScreen({ route, navigation }) {
     }
   }, [challengeId, detail, userId, dispatch]);
 
-  // When all days are complete, vibrate + show modal
+  // When all days are complete, show completion modal
   useEffect(() => {
     if (
       detail &&
       progress &&
       progress.completedDays.length === detail.durationDays
     ) {
-      // Vibration.vibrate(100);
       setModalVisible(true);
     }
   }, [detail, progress]);
+
+  const handleCompleteDay = async () => {
+    if (completingDay) return;
+
+    setCompletingDay(true);
+
+    try {
+      const result = await dispatch(completeDay({
+        id: challengeId,
+        day // Remove userId as it's now handled by auth middleware
+      })).unwrap();
+
+      // Show streak celebration if streak increased
+      if (result.streak && result.streak.current > 1) {
+        setStreakData({
+          current: result.streak.current,
+          isNewRecord: result.streak.isNewRecord
+        });
+        setStreakCelebrationVisible(true);
+      }
+
+      // Update user streak in Redux
+      dispatch(updateUserStreak({
+        token,
+        challengeCompleted: result.challengeCompleted
+      }));
+
+    } catch (error) {
+      console.error('Error completing day:', error);
+      Alert.alert(
+        'Error',
+        'Failed to complete day. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setCompletingDay(false);
+    }
+  };
 
   if (loading || !detail) {
     return (
@@ -83,24 +151,38 @@ export default function DayDetailScreen({ route, navigation }) {
         style={[
           styles.completeButton,
           completed && styles.completeButtonDone,
+          completingDay && styles.completeButtonLoading,
         ]}
-        onPress={() =>
-          !completed &&
-          dispatch(completeDay({ id: challengeId, userId, day }))
-        }
-        disabled={completed}
+        onPress={handleCompleteDay}
+        disabled={completed || completingDay}
       >
-        <Text style={styles.completeText}>
-          {completed ? '✓ Day Complete' : 'Mark Day Complete'}
-        </Text>
+        {completingDay ? (
+          <ActivityIndicator color="#FFF" size="small" />
+        ) : (
+          <Text style={styles.completeText}>
+            {completed ? '✓ Day Complete' : 'Mark Day Complete'}
+          </Text>
+        )}
       </TouchableOpacity>
 
+      {/* Completion Modal */}
       <CompletionModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         challengeTitle={detail.title}
         completionDate={moment().format('MMMM D, YYYY')}
       />
+
+      {/* Streak Celebration Modal */}
+      {streakCelebrationVisible && (
+        <View style={styles.modalOverlay}>
+          <StreakCelebration
+            streak={streakData.current}
+            isNewRecord={streakData.isNewRecord}
+            onClose={() => setStreakCelebrationVisible(false)}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -121,7 +203,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     margin: 16,
   },
-  completeButtonDone: { backgroundColor: colors.border },
-  completeText: { color: '#FFF', fontWeight: '600', fontSize: 16 },
+  completeButtonDone: {
+    backgroundColor: colors.border
+  },
+  completeButtonLoading: {
+    backgroundColor: colors.primary
+  },
+  completeText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 16
+  },
+  // NEW: Streak Celebration Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  streakCelebration: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  celebrationEmoji: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  celebrationTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  celebrationText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FF6B35',
+    marginBottom: 8,
+  },
+  celebrationSubtext: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 20,
+  },
+  celebrationButton: {
+    backgroundColor: colors.accent,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  celebrationButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });
-

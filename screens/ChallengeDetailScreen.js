@@ -6,7 +6,8 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  StyleSheet
+  StyleSheet,
+  View
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -22,9 +23,10 @@ export default function ChallengeDetailScreen({ route, navigation }) {
   const { id } = route.params;
   const dispatch = useDispatch();
 
-  // 1) All hooks up top, before any return:
+  // All hooks up top, before any return:
   const { detail, progress, status } = useSelector(s => s.challenges);
   const userId = useSelector(s => s.user.profile?._id);
+  const currentStreak = useSelector(s => s.user.profile?.currentStreak || 0);
   const loading = status === 'loading';
 
   // compute days *as a hook* so it always runs, even during the loading state
@@ -40,7 +42,7 @@ export default function ChallengeDetailScreen({ route, navigation }) {
     }
   }, [dispatch, id, userId]);
 
-  // 2) Early return for loading / stale data
+  // Early return for loading / stale data
   if (loading || !detail || detail._id !== id) {
     return (
       <SafeAreaView style={styles.center}>
@@ -58,10 +60,26 @@ export default function ChallengeDetailScreen({ route, navigation }) {
         <Text style={styles.title}>{detail.title}</Text>
         <Text style={styles.description}>{detail.description}</Text>
 
-        <ProgressBar
-          progress={doneCount / detail.durationDays}
-          barColor={colors.primary}
-        />
+        {/* Progress Section */}
+        <View style={styles.progressSection}>
+          <ProgressBar
+            progress={doneCount / detail.durationDays}
+            barColor={colors.primary}
+          />
+          <Text style={styles.progressText}>
+            {doneCount}/{detail.durationDays} days completed
+          </Text>
+        </View>
+
+        {/* Streak Display */}
+        {progress && currentStreak > 0 && (
+          <View style={styles.streakDisplay}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={styles.streakText}>
+              {currentStreak} day streak!
+            </Text>
+          </View>
+        )}
 
         {!progress && (
           <TouchableOpacity
@@ -78,6 +96,8 @@ export default function ChallengeDetailScreen({ route, navigation }) {
             key={day}
             day={day}
             done={progress?.completedDays.includes(day)}
+            currentStreak={currentStreak}
+            showStreak={progress?.completedDays.includes(day)} // Only show streak on completed days
             onPress={() =>
               navigation.navigate('DayDetail', { challengeId: id, day })
             }
@@ -107,6 +127,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     marginBottom: 16
+  },
+  progressSection: {
+    marginBottom: 20,
+  },
+  progressText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  streakDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 165, 0, 0.1)',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 165, 0, 0.3)',
+  },
+  streakEmoji: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  streakText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FF6B35',
   },
   startButton: {
     backgroundColor: colors.accent,
