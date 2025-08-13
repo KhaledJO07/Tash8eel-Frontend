@@ -21,38 +21,27 @@ import ChallengeScreen from '../screens/ChallengeScreen';
 import WorkoutListScreen from '../screens/workoutListScreen';
 import WorkoutDetailScreen from '../screens/workoutDetailScreen';
 import WorkoutCategoriesScreen from '../screens/workoutCategoriesScreen';
-import ChatBotScreen from '../screens/chatBotScreen'; 
+import ChatBotScreen from '../screens/chatBotScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
 import WorkoutDtlScreen from '../screens/workoutDtlScreen';
 import DayDetailScreen from '../screens/DayDetailScreen';
 import StreakLeaderboardScreen from '../screens/StreakLeaderboardScreen';
 
-
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 const WorkoutStack = createNativeStackNavigator();
 const ChallengeStack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
+const MainStack = createNativeStackNavigator();
 
 // A separate stack for the Welcome, Login, and SignUp screens
-function AuthStack() {
+function AuthStackNavigator() {
     return (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
-        </Stack.Navigator>
-    );
-}
-
-// A dedicated stack for all authenticated user screens
-function AuthenticatedStack() {
-    return (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
-            <Stack.Screen name="ChatBot" component={ChatBotScreen}/>
-        </Stack.Navigator>
+        <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+            <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
+            <AuthStack.Screen name="Login" component={LoginScreen} />
+            <AuthStack.Screen name="SignUp" component={SignUpScreen} />
+        </AuthStack.Navigator>
     );
 }
 
@@ -83,6 +72,91 @@ function ChallengeStackNavigator() {
     );
 }
 
+function WorkoutStackNavigator() {
+    return (
+        <WorkoutStack.Navigator screenOptions={{ headerShown: false }}>
+            <WorkoutStack.Screen name="WorkoutCategories" component={WorkoutCategoriesScreen} />
+            <WorkoutStack.Screen name="WorkoutList" component={WorkoutListScreen} />
+            <WorkoutStack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
+        </WorkoutStack.Navigator>
+    );
+}
+
+function MainTabsNavigator() {
+    const insets = useSafeAreaInsets();
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarIcon: ({ color, size }) => {
+                    let iconName;
+                    switch (route.name) {
+                        case 'Home':
+                            iconName = 'home-outline';
+                            break;
+                        case 'Challenges':
+                            iconName = 'trophy-outline';
+                            break;
+                        case 'Workouts':
+                            iconName = 'barbell-outline';
+                            break;
+                        case 'StreakLeaderboard':
+                            iconName = 'bar-chart-outline';
+                            break;
+                        case 'Timer':
+                            iconName = 'timer-outline';
+                            break;
+                        case 'Profile':
+                            iconName = 'person-outline';
+                            break;
+                        default:
+                            iconName = 'ellipse-outline';
+                    }
+                    return <Ionicons name={iconName} size={size + 2} color={color} />;
+                },
+                tabBarActiveTintColor: '#5856D6',
+                tabBarInactiveTintColor: '#A0A0A0',
+                tabBarStyle: {
+                    backgroundColor: '#121212',
+                    height: 60 + insets.bottom,
+                    paddingBottom: 4 + insets.bottom,
+                    paddingTop: 10,
+                    elevation: 10,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -5 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 10,
+                },
+                tabBarLabelStyle: {
+                    fontSize: 12,
+                    marginBottom: 5,
+                    fontWeight: '600',
+                    textTransform: 'none',
+                },
+            })}
+        >
+            <Tab.Screen name="Home" component={HomeScreen} options={{
+                tabBarLabel: '',
+            }}
+            />
+            <Tab.Screen name="Challenges" component={ChallengeStackNavigator} options={{
+                tabBarLabel: '',
+            }} />
+            <Tab.Screen name="Workouts" component={WorkoutStackNavigator} options={{
+                tabBarLabel: '',
+            }} />
+            <Tab.Screen name="StreakLeaderboard" component={StreakLeaderboardScreen} options={{
+                tabBarLabel: '',
+            }} />
+            <Tab.Screen name="Timer" component={TimerScreen} options={{
+                tabBarLabel: '',
+            }} />
+            <Tab.Screen name="Profile" component={ProfileScreen} options={{
+                tabBarLabel: '',
+            }} />
+        </Tab.Navigator>
+    );
+}
 
 // This component will handle the initial data fetching and navigation
 const MainAppLoadingScreen = ({ navigation }) => {
@@ -123,77 +197,15 @@ const MainAppLoadingScreen = ({ navigation }) => {
     );
 };
 
-function WorkoutStackNavigator() {
+// Main authenticated stack that includes the loading screen, tabs, and other screens
+function MainStackNavigator() {
     return (
-        <WorkoutStack.Navigator screenOptions={{ headerShown: false }}>
-            <WorkoutStack.Screen name="WorkoutCategories" component={WorkoutCategoriesScreen} />
-            <WorkoutStack.Screen name="WorkoutList" component={WorkoutListScreen} />
-            <WorkoutStack.Screen name="WorkoutDetail" component={WorkoutDetailScreen} />
-        </WorkoutStack.Navigator>
-    );
-}
-
-function MainTabs() {
-    const insets = useSafeAreaInsets();
-    return (
-        <Tab.Navigator
-            screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarIcon: ({ color, size }) => {
-                    let iconName;
-                    switch (route.name) {
-                        case 'Home':
-                            iconName = 'home-outline';
-                            break;
-                        case 'Challenges':
-                            iconName = 'trophy-outline';
-                            break;
-                        // Removed the 'Create' case
-                        case 'Workouts':
-                            iconName = 'barbell-outline';
-                            break;
-                        case 'StreakLeaderboard':
-                            iconName = 'bar-chart-outline';
-                            break;
-                        case 'Timer':
-                            iconName = 'timer-outline';
-                            break;
-                        case 'Profile':
-                            iconName = 'person-outline';
-                            break;
-                        default:
-                            iconName = 'ellipse-outline';
-                    }
-                    return <Ionicons name={iconName} size={size + 2} color={color} />;
-                },
-                tabBarActiveTintColor: '#5856D6',
-                tabBarInactiveTintColor: '#A0A0A0',
-                tabBarStyle: {
-                    backgroundColor: '#121212',
-                    height: 60 + insets.bottom,
-                    paddingBottom: 4 + insets.bottom,
-                    paddingTop: 10,
-                    elevation: 10,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: -5 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 10,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    marginBottom: 5,
-                    fontWeight: '600',
-                    textTransform: 'none',
-                },
-            })}
-        >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Challenges" component={ChallengeStackNavigator} />
-            <Tab.Screen name="Workouts" component={WorkoutStackNavigator} />
-            <Tab.Screen name="StreakLeaderboard" component={StreakLeaderboardScreen} />
-            <Tab.Screen name="Timer" component={TimerScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
-        </Tab.Navigator>
+        <MainStack.Navigator screenOptions={{ headerShown: false }}>
+            <MainStack.Screen name="MainAppLoading" component={MainAppLoadingScreen} />
+            <MainStack.Screen name="MainTabs" component={MainTabsNavigator} />
+            <MainStack.Screen name="FitnessProfile" component={FitnessProfileScreen} />
+            <MainStack.Screen name="ChatBot" component={ChatBotScreen} />
+        </MainStack.Navigator>
     );
 }
 
@@ -203,7 +215,7 @@ export default function AppNavigator() {
     // The conditional rendering is now at the top level
     return (
         <NavigationContainer>
-            {isSignedIn ? <AuthenticatedStack /> : <AuthStack />}
+            {isSignedIn ? <MainStackNavigator /> : <AuthStackNavigator />}
         </NavigationContainer>
     );
 }

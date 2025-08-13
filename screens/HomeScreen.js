@@ -34,6 +34,7 @@ const Icon = ({ name, size = 24, color = '#000' }) => {
     'trending-up': '📈',
     bulb: '💡',
     'plus-circle': '➕',
+    'stats-chart': '📊',
   };
   return <Text style={{ fontSize: size, color }}>{icons[name] || '●'}</Text>;
 };
@@ -291,10 +292,10 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation?.navigate('Workouts')}
             />
             <QuickActionButton
-              title="Create"
-              icon="plus-circle"
+              title="Leaderboard"
+              icon="stats-chart"  // This should work
               color="#FBBF24"
-              onPress={() => navigation?.navigate('Create')}
+              onPress={() => navigation?.navigate('StreakLeaderboard')}
             />
           </View>
         </Animated.View>

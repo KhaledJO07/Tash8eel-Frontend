@@ -12,6 +12,7 @@ import {
   Platform,
   Animated,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import axios from 'axios';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -21,6 +22,7 @@ import { API_BASE_URL_JO } from '../config';
 import { useDispatch, useSelector } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
 import { setProfile } from '../app/features/userSlice';
+import { signOut } from '../app/features/authSlice'; // Import signOut action
 import Header from '../components/Header';
 import StreakStatsWidget from '../components/StreakStatsWidget';
 
@@ -107,6 +109,29 @@ export default function ProfileScreen({ route, navigation }) {
   const hideCustomToast = () => {
     setShowToast(false);
     setToastMessage('');
+  };
+
+  // NEW: Handle Sign Out
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => {
+            dispatch(signOut());
+            showCustomToast('Signed out successfully');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const goalOptions = [
@@ -411,6 +436,7 @@ export default function ProfileScreen({ route, navigation }) {
             </View>
           </View>
 
+          {/* Save Profile Button */}
           <TouchableOpacity onPress={handleSave} style={styles.buttonWrapper} disabled={saving}>
             <LinearGradient
               colors={["#5856D6", "#8A56D6"]}
@@ -420,6 +446,13 @@ export default function ProfileScreen({ route, navigation }) {
             >
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Profile</Text>}
             </LinearGradient>
+          </TouchableOpacity>
+
+          {/* NEW: Sign Out Button */}
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButtonWrapper}>
+            <View style={styles.signOutButton}>
+              <Text style={styles.signOutButtonText}>Sign Out</Text>
+            </View>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -577,6 +610,25 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // NEW: Sign Out Button Styles
+  signOutButtonWrapper: {
+    marginTop: 15,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  signOutButton: {
+    backgroundColor: '#FF3B30',
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FF453A',
+  },
+  signOutButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
